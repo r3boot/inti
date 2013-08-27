@@ -45,7 +45,7 @@ def main():
     api_queue = Queue.Queue()
     output = Output(debug=args.debug)
     controller = Controller(output, api_queue, num_spots=args.num_spots)
-    api = API(output, api_queue)
+    api = API(output, api_queue, controller)
 
     return
 

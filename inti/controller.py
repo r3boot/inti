@@ -16,6 +16,7 @@ class Controller(BaseClass, threading.Thread):
         self._fd = self._setup_fd(dmx_port)
         self._spots = self._setup_spots(num_spots)
         self._q = queue
+        self._is_black = False
         self.debug('class initialized')
         self.start()
 
@@ -26,6 +27,8 @@ class Controller(BaseClass, threading.Thread):
     def run(self):
         while not self.stop:
             frame_data = self._q.get()
+            while self._is_black:
+                time.sleep(0.1)
             self.send_frame(*frame_data)
 
     def _setup_fd(self, dmx_port):
@@ -45,8 +48,13 @@ class Controller(BaseClass, threading.Thread):
     def flushed(self):
         return self._q.empty()
 
-    def blackout(self):
-        self._q.put([[0] * (len(self._spots.keys() * 3))])
+    def blackout(self, value):
+        if value != self._is_black and value == True:
+            self.info('enabling blackout')
+            self.send_frame([0] * (len(self._spots.keys() * 3)))
+        else:
+            self.info('disabling blackout')
+        self._is_black = value
 
     def queue_frame(self, data, duration=0):
         self._q.put([data, duration])

@@ -8,9 +8,10 @@ from inti.baseclass import BaseClass
 from inti.controller import Controller
 
 class API(BaseClass):
-    def __init__(self, output, api_queue, host='localhost', port='7231'):
+    def __init__(self, output, api_queue, controller, host='localhost', port='7231'):
         BaseClass.__init__(self, output)
         self.q = api_queue
+        self._c = controller
         self._host = host
         self._port = port
         self._s = bottle.Bottle()
@@ -23,6 +24,8 @@ class API(BaseClass):
     def _setup_routing(self):
         self._s.route('/ping',  method='GET', callback=self.ping)
         self._s.route('/frame', method='PUT', callback=self.send_frame)
+        self._s.route('/off',   method='GET', callback=self.disable_queue)
+        self._s.route('/on',   method='GET', callback=self.enable_queue)
 
     def run(self):
         #self._s.run(host=self._host, port=self._port, server='gevent')
@@ -68,6 +71,12 @@ class API(BaseClass):
             return bottle.abort(404, 'Not found')
 
         self.q.put([frame_data['frame'], frame_data['duration']])
+
+    def disable_queue(self):
+        self._c.blackout(True)
+
+    def enable_queue(self):
+        self._c.blackout(False)
 
 """
 if __name__ == '__main__':
