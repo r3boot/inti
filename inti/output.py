@@ -19,6 +19,7 @@ class Output(threading.Thread):
         self._debug = debug
         self._q = Queue.Queue()
         self.debug('Output', 'Class initialized')
+        self.start()
 
     def run(self):
         self.debug('Output', 'mainloop started')
@@ -55,6 +56,7 @@ class Output(threading.Thread):
     def debug(self, caller, msg):
         self._msg('debug', caller, msg)
 
+"""
 if __name__ == '__main__':
     output = Output(debug=True)
     output.start()
@@ -66,3 +68,4 @@ if __name__ == '__main__':
 
     while not output.flushed():
         time.sleep(0.1)
+"""
