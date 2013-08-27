@@ -7,6 +7,7 @@ import sys
 
 from inti.output import Output
 from inti.controller import Controller
+from inti.policer import Policer
 from inti.api import API
 
 __description__ = 'Inti RESTful api'
@@ -44,8 +45,9 @@ def main():
 
     api_queue = Queue.Queue()
     output = Output(debug=args.debug)
-    controller = Controller(output, api_queue, num_spots=args.num_spots)
-    api = API(output, api_queue, controller)
+    policer = Policer(output)
+    controller = Controller(output, api_queue, policer, num_spots=args.num_spots)
+    api = API(output, api_queue, controller, policer)
 
     return
 

@@ -8,7 +8,7 @@ from inti.baseclass import BaseClass
 class Controller(BaseClass, threading.Thread):
     _name = 'Controller'
 
-    def __init__(self, output, queue, dmx_port='/dev/dmx0', num_spots=10):
+    def __init__(self, output, queue, policer, dmx_port='/dev/dmx0', num_spots=10):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.stop = False
@@ -16,6 +16,7 @@ class Controller(BaseClass, threading.Thread):
         self._fd = self._setup_fd(dmx_port)
         self._spots = self._setup_spots(num_spots)
         self._q = queue
+        self._p = policer
         self._is_black = False
         self.debug('class initialized')
         self.start()
@@ -51,15 +52,12 @@ class Controller(BaseClass, threading.Thread):
     def blackout(self, value):
         if value != self._is_black and value == True:
             self.info('enabling blackout')
-            self.send_frame([0] * (len(self._spots.keys() * 3)))
+            self.send_frame(False, [0] * (len(self._spots.keys() * 3)))
         else:
             self.info('disabling blackout')
         self._is_black = value
 
-    def queue_frame(self, data, duration=0):
-        self._q.put([data, duration])
-
-    def send_frame(self, data, duration=0):
+    def send_frame(self, srcip, data, duration=0):
         data = [0] + data
         if not self._fd:
             self.error('failed to write to controller')
@@ -72,6 +70,9 @@ class Controller(BaseClass, threading.Thread):
 
         if duration != 0:
             time.sleep(duration/1000.0)
+
+        if srcip:
+            self._p.decrement(srcip)
 
 """
 if __name__ == '__main__':

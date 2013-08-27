@@ -8,10 +8,11 @@ from inti.baseclass import BaseClass
 from inti.controller import Controller
 
 class API(BaseClass):
-    def __init__(self, output, api_queue, controller, host='localhost', port='7231'):
+    def __init__(self, output, api_queue, controller, policer, host='localhost', port='7231'):
         BaseClass.__init__(self, output)
         self.q = api_queue
         self._c = controller
+        self._p = policer
         self._host = host
         self._port = port
         self._s = bottle.Bottle()
@@ -64,13 +65,17 @@ class API(BaseClass):
         return 'pong\r\n'
 
     def send_frame(self):
+        srcip = bottle.request.remote_addr
+        if self._p.ratelimit(srcip):
+            return bottle.abort(503, 'Service unavailable')
+
         frame_data = json.load(bottle.request.body)
         frame_data = self.validate_frame(frame_data)
 
         if not frame_data:
             return bottle.abort(404, 'Not found')
 
-        self.q.put([frame_data['frame'], frame_data['duration']])
+        self.q.put([srcip, frame_data['frame'], frame_data['duration']])
 
     def disable_queue(self):
         self._c.blackout(True)
