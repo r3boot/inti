@@ -1,16 +1,33 @@
 
+import Queue
 import os
+import threading
 import time
 
 from inti.baseclass import BaseClass
 
-class Controller(BaseClass):
+class Controller(BaseClass, threading.Thread):
     _name = 'Controller'
 
-    def __init__(self, output, dmx_port='/dev/dmx0'):
+    def __init__(self, output, dmx_port='/dev/dmx0', num_spots=10):
+        threading.Thread.__init__(self)
+        self.setDaemon(True)
+        self.stop = False
         BaseClass.__init__(self, output)
         self._fd = self._setup_fd(dmx_port)
+        self._spots = self._setup_spots(num_spots)
+        self._q = Queue.Queue()
         self.debug('class initialized')
+        self.start()
+
+    def __destroy__(self):
+        if self._fd:
+            os.close(self._fd)
+
+    def run(self):
+        while not self.stop:
+            frame_data = self._q.get()
+            self.send_frame(*frame_data)
 
     def _setup_fd(self, dmx_port):
         if not os.path.exists(dmx_port):
@@ -20,11 +37,22 @@ class Controller(BaseClass):
         fd = os.open(dmx_port, os.O_WRONLY)
         return fd
 
-    def __destroy__(self):
-        if self._fd:
-            os.close(self._fd)
+    def _setup_spots(self, num_spots):
+        spots = {}
+        for spot_id in xrange(num_spots):
+            spots[spot_id] = [0,0,0]
+        return spots
 
-    def send_frame(self, data):
+    def flushed(self):
+        return self._q.empty()
+
+    def blackout(self):
+        self._q.put([[0] * (len(self._spots.keys() * 3))])
+
+    def queue_frame(self, data, duration=0):
+        self._q.put([data, duration])
+
+    def send_frame(self, data, duration=0):
         data = [0] + data
         if not self._fd:
             self.error('failed to write to controller')
@@ -35,31 +63,24 @@ class Controller(BaseClass):
             ))
         os.write(self._fd, ''.join(chr(x) for x in data))
 
+        if duration != 0:
+            time.sleep(duration/1000.0)
+
 if __name__ == '__main__':
     from output import Output
 
     o = Output(debug=True)
 
-    controller = Controller(o)
+    controller = Controller(o, num_spots=5)
 
-    for i in xrange(255):
-        controller.send_frame([i,0,0]*5)
+    controller.blackout()
+    controller.queue_frame([255,0,0]*5, duration=1000)
+    controller.queue_frame([0,255,0]*5, duration=1000)
+    controller.queue_frame([0,0,255]*5, duration=1000)
+    controller.blackout()
 
-    for i in reversed(xrange(255)):
-        controller.send_frame([i,0,0]*5)
-
-    for i in xrange(255):
-        controller.send_frame([0,i,0]*5)
-
-    for i in reversed(xrange(255)):
-        controller.send_frame([0,i,0]*5)
-
-    for i in xrange(255):
-        controller.send_frame([0,0,i]*5)
-
-    for i in reversed(xrange(255)):
-        controller.send_frame([0,0,i]*5)
-
+    while not controller.flushed():
+        time.sleep(0.1)
 
     while not o.flushed():
         time.sleep(0.1)
