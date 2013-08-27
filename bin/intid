@@ -1,0 +1,53 @@
+#!/usr/bin/env python2
+
+import Queue
+import argparse
+import logging
+import sys
+
+from inti.output import Output
+from inti.controller import Controller
+from inti.api import API
+
+__description__ = 'Inti RESTful api'
+
+_d_debug = False
+_d_num_spots = 10
+_d_listen_host = 'localhost'
+_d_listen_port = 7231
+
+ll2str = {
+    10: 'DEBUG',
+    20: 'INFO',
+    30: 'WARNING',
+    40: 'ERROR',
+    50: 'CRITICAL'
+}
+
+def main():
+    argv = sys.argv
+    parser = argparse.ArgumentParser(description=__description__)
+    parser.add_argument('-D', dest='debug', action='store_true',
+        default=_d_debug, help='Enable debugging')
+
+    parser.add_argument('-n', dest='num_spots', action='store',
+        type=int, default=_d_num_spots, metavar='NUM',
+        help='Number of spots [{0}]'.format(_d_num_spots))
+    parser.add_argument('-H', dest='listen_host', action='store',
+        type=str, default=_d_listen_host, metavar='HOST',
+        help='Bind to this host [{0}]'.format(_d_listen_host))
+    parser.add_argument('-P', dest='listen_port', action='store',
+        type=int, default=_d_listen_port, metavar='PORT',
+        help='Bind to this port [{0}]'.format(_d_listen_port))
+
+    args = parser.parse_args()
+
+    api_queue = Queue.Queue()
+    output = Output(debug=args.debug)
+    controller = Controller(output, api_queue, num_spots=args.num_spots)
+    api = API(output, api_queue)
+
+    return
+
+if __name__ == '__main__':
+    sys.exit(main())

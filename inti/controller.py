@@ -1,5 +1,4 @@
 
-import Queue
 import os
 import threading
 import time
@@ -9,14 +8,14 @@ from inti.baseclass import BaseClass
 class Controller(BaseClass, threading.Thread):
     _name = 'Controller'
 
-    def __init__(self, output, dmx_port='/dev/dmx0', num_spots=10):
+    def __init__(self, output, queue, dmx_port='/dev/dmx0', num_spots=10):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.stop = False
         BaseClass.__init__(self, output)
         self._fd = self._setup_fd(dmx_port)
         self._spots = self._setup_spots(num_spots)
-        self._q = Queue.Queue()
+        self._q = queue
         self.debug('class initialized')
         self.start()
 
@@ -66,6 +65,7 @@ class Controller(BaseClass, threading.Thread):
         if duration != 0:
             time.sleep(duration/1000.0)
 
+"""
 if __name__ == '__main__':
     from output import Output
 
@@ -84,3 +84,4 @@ if __name__ == '__main__':
 
     while not o.flushed():
         time.sleep(0.1)
+"""

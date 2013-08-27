@@ -1,5 +1,5 @@
 
-from gevent import monkey; monkey.patch_all()
+#from gevent import monkey; monkey.patch_all()
 
 import bottle
 import json
@@ -8,13 +8,14 @@ from inti.baseclass import BaseClass
 from inti.controller import Controller
 
 class API(BaseClass):
-    def __init__(self, output, controller, host='localhost', port='7231'):
+    def __init__(self, output, api_queue, host='localhost', port='7231'):
         BaseClass.__init__(self, output)
-        self._c = controller
+        self.q = api_queue
         self._host = host
         self._port = port
         self._s = bottle.Bottle()
         self._setup_routing()
+        self.run()
 
     def __destroy__(self):
         pass
@@ -24,19 +25,35 @@ class API(BaseClass):
         self._s.route('/frame', method='PUT', callback=self.send_frame)
 
     def run(self):
-        self._s.run(host=self._host, port=self._port, server='gevent')
+        #self._s.run(host=self._host, port=self._port, server='gevent')
+        self._s.run(host=self._host, port=self._port)
+
+    def fetch_frame(self):
+        if self.q.empty():
+            return False
+        return self.q.get()
 
     def validate_frame(self, data):
         if not 'frame' in data.keys():
             self.error('invalid frame data: "frame" missing')
             return False
 
+        i = 0
+        for value in data['frame']:
+            if not isinstance(value, int):
+                self.error('invalid frame data: frame[{0}]: {1}'.format(
+                    i, value))
+                return False
+            i += 1
+
         if not 'duration' in data.keys():
             self.warning('no duration found, setting to 0ms')
             data['duration'] = 0
 
-        #new_frame = [^chr(x) for x in data['frame']]
-        #data['frame'] = new_frame
+        if not isinstance(data['duration'], int):
+            self.error('invalid frame data: duration: {0}'.format(
+                data['duration']))
+            return False
 
         return data
 
@@ -50,11 +67,13 @@ class API(BaseClass):
         if not frame_data:
             return bottle.abort(404, 'Not found')
 
-        self._c.queue_frame(frame_data['frame'], frame_data['duration'])
+        self.q.put([frame_data['frame'], frame_data['duration']])
 
+"""
 if __name__ == '__main__':
     from inti.output import Output
     o = Output(debug=True)
     c = Controller(o, num_spots=5)
     api = API(o, c)
     api.run()
+"""
