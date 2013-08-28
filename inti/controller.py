@@ -60,7 +60,7 @@ class Controller(BaseClass, threading.Thread):
     def send_frame(self, srcip, data, duration=0):
         data = [0] + data
         if not self._fd:
-            self.error('failed to write to controller')
+            self.error('controller is unavailable')
             return
 
         self.debug('frame: {0}'.format(

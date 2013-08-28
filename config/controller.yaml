@@ -1,0 +1,10 @@
+---
+spots:
+    1: First RGB led spot
+    2: Second RGB led spot
+    3: Third RGB led spot
+    4: Fourth RGB led spot
+    5: Fifth RGB led spot
+limits:
+    max_requests: 3600
+    max_per_ip: 1800
