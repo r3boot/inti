@@ -38,7 +38,7 @@ function load_configuration() {
             load_spots(response['spots'])
 
             store_set('groups', response['groups'])
-            //load_groups(response['groups'])
+            load_groups(response['groups'])
         },
         error: function(xhr, textStatus, errorThrown) {
             console.log('Failed to load configuration: '+textStatus+', '+errorThrown)
@@ -52,57 +52,101 @@ function load_spots(spots) {
     content += '<div class="span1"><b>Name</b></div>'
     content += '<div class="span3"><b>Description</b></div>'
     content += '<div class="span2"><b>Location</b></div>'
+    content += '<div class="span1"><b>Slot</b></div>'
     content += '<div class="span1"><b>Color</b></div>'
     content += '</div>'
-    for (var spot_name in spots) {
+
+    var keys = Object.keys(spots)
+    keys.sort()
+    for (var i=0; i<keys.length; i++) {
+        var spot_name = keys[i]
         var spot_info = spots[spot_name]
         content += '<div class="row">'
         content += '<div class="span1">'+spot_name+'</div>'
         content += '<div class="span3">'+spot_info['description']+'</div>'
         content += '<div class="span2">'+spot_info['location']+'</div>'
+        content += '<div class="span1">'+spot_info['slot']+'</div>'
         content += '<div class="span1">#000000</div>'
         content += '</div>'
     }
+
     $('#available_spots').html(content)
 }
 
+function load_groups(groups) {
+    var content = '<h4>Available groups</h4>'
+    content += '<div class="row">'
+    content += '<div class="span1"><b>Name</b></div>'
+    content += '<div class="span3"><b>Description</b></div>'
+    content += '<div class="span2"><b>Location</b></div>'
+    content += '<div class="span3"><b>Spots</b></div>'
+    content += '</div>'
+
+    var keys = Object.keys(groups)
+    keys.sort()
+    for (var i=0; i<keys.length; i++) {
+        var group_name = keys[i]
+        var group_info = groups[group_name]
+        content += '<div class="row">'
+        content += '<div class="span1">'+group_name+'</div>'
+        content += '<div class="span3">'+group_info['description']+'</div>'
+        content += '<div class="span2">'+group_info['location']+'</div>'
+        content += '<div class="span3">'+group_info['spots']+'</div>'
+        content += '</div>'
+    }
+
+    $('#available_groups').html(content)
+}
+
+function setup_colorwheel() {
+    var cw = Raphael.colorwheel($(".cw_id")[0],300)
+    var onchange_el = $(".cw_onchange")
+    var ondrag_el = $(".cw_ondrag")
+    cw.color("#F00");
+
+    function start() {
+        ondrag_el.show()
+    }
+
+    function stop() {
+        ondrag_el.hide()
+    }
+
+    cw.ondrag(start, stop);
+
+    cw.onchange(function(color) {
+        var colors = [
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+        ]
+        var frame_data = {}
+        frame_data['frame'] = colors
+
+        $.ajax({
+            url: '/frame',
+            type: 'put',
+            data: JSON.stringify(frame_data),
+            dataType: 'json',
+            error: function(xhr, textStatus, errorThrown) {
+                console.log('request failed: '+textStatus+'; '+errorThrown)
+            }
+        })
+    })
+}
+
 function setup_application() {
-    var content = '<div class="tabbable">'
-    content += '<ul class="nav nav-tabs">'
-    content += '<li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>'
-    content += '<li><a href="#mixer" data-toggle="tab">Mixer</a></li>'
-    content += '</ul>'
-    content += '<div class="tab-content">'
-    content += '<div class="tab-pane active" id="overview">'
-    content += '</div>'
-    content += '<div class="tab-pane" id="mixer">'
-    content += '<p>Howdy, I am in Section 2.</p>'
-    content += '</div>'
-    content += '</div>'
-    content += '</div>'
-    $('#content').html(content)
-
-    // Initialize all tabs
-    content = '<p />'
-    content += '<div class="container" id="available_spots">'
-    content += '</div>'
-    $('#overview').html(content)
-
     $('#overview a').click(function (e) {
         e.preventdefault();
         $(this).tab('show');
     })
 
-    content = '<p>'
-    content += 'mixer'
-    content += '</p>'
-    $('#mixer').html(content)
-
-    $('#mixer a').click(function (e) {
+    $('#colorwheel a').click(function (e) {
         e.preventdefault();
         $(this).tab('show');
     })
-
 }
 
 function main() {
@@ -111,6 +155,7 @@ function main() {
         reset_store()
         load_configuration()
         setup_application()
+        setup_colorwheel()
     })
 }
 
