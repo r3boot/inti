@@ -6,6 +6,7 @@ import logging
 import sys
 
 from inti.output import Output
+from inti.config import Config
 from inti.controller import Controller
 from inti.policer import Policer
 from inti.api import API
@@ -16,6 +17,7 @@ _d_debug = False
 _d_num_spots = 10
 _d_listen_host = 'localhost'
 _d_listen_port = 7231
+_d_config_file = '/etc/inti.yaml'
 
 ll2str = {
     10: 'DEBUG',
@@ -41,13 +43,17 @@ def main():
         type=int, default=_d_listen_port, metavar='PORT',
         help='Bind to this port [{0}]'.format(_d_listen_port))
 
+    parser.add_argument('config_file', metavar='CONFIG', type=str,
+            nargs=1, help='Configuration file to use')
+
     args = parser.parse_args()
 
     api_queue = Queue.Queue()
     output = Output(debug=args.debug)
+    config = Config(output, args.config_file[0])
     policer = Policer(output)
     controller = Controller(output, api_queue, policer, num_spots=args.num_spots)
-    api = API(output, api_queue, controller, policer)
+    api = API(output, config, api_queue, controller, policer)
 
     return
 

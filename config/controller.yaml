@@ -1,10 +1,44 @@
 ---
 spots:
-    1: First RGB led spot
-    2: Second RGB led spot
-    3: Third RGB led spot
-    4: Fourth RGB led spot
-    5: Fifth RGB led spot
+    rgb_1:
+        slot: 0
+        description: First RGB led spot
+        location: Nowhere
+    rgb_2:
+        slot: 1
+        description: Second RGB led spot
+        location: Nowhere
+    rgb_3:
+        slot: 2
+        description: Third RGB led spot
+        location: Nowhere
+    rgb_4:
+        slot: 3
+        description: Fourth RGB led spot
+        location: Nowhere
+    rgb_5:
+        slot: 4
+        description: Fifth RGB led spot
+        location: Nowhere
+
+groups:
+    even:
+        description: All even spots
+        location: Nowhere
+        spots:
+            - rgb_2
+            - rgb_4
+    odd:
+        description: All odd spots
+        location: Nowhere
+        spots:
+            - rgb_1
+            - rgb_3
+            - rgb_5
+
 limits:
     max_requests: 3600
     max_per_ip: 1800
+
+webapp:
+    media: /people/r3boot/git/inti/media

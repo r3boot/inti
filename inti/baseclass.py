@@ -9,10 +9,10 @@ class BaseClass:
         self._output.info(self._name, msg)
 
     def warning(self, msg):
-        self._output.info(self._name, msg)
+        self._output.warning(self._name, msg)
 
     def error(self, msg):
-        self._output.info(self._name, msg)
+        self._output.error(self._name, msg)
 
     def debug(self, msg):
-        self._output.info(self._name, msg)
+        self._output.debug(self._name, msg)
