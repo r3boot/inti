@@ -50,6 +50,7 @@ class Policer(BaseClass, threading.Thread):
         self._event.wait()
         if srcip in self._p.keys():
             self._p[srcip][NUM_REQUESTS] -= 1
+            self._total_requests -= 1
 
     def ratelimit(self, srcip):
         self._event.wait()

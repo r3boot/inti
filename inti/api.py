@@ -54,7 +54,6 @@ class API(BaseClass):
             i += 1
 
         if not 'duration' in data.keys():
-            self.warning('no duration found, setting to 0ms')
             data['duration'] = 0
 
         if not isinstance(data['duration'], int):
