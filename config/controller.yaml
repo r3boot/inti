@@ -37,7 +37,7 @@ groups:
             - rgb_5
 
 limits:
-    max_requests: 3600
+    max_requests: 28800
     max_per_ip: 1800
 
 webapp:
