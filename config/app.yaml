@@ -1,0 +1,31 @@
+controllers:
+    - name: DMX Controller 1
+      description: First DMX controller
+      device: /dev/dmx0
+      id: 1
+    - name: Art-Net Controller 1
+      description: First Art-Net controller
+      device: 10.42.12.130
+      id: 1
+
+rgb_spots:
+    - name: DMX Spot 1
+      description: First spot on Controller 1
+      controller: Art-Net Controller 1
+      slot: 0
+    - name: DMX Spot 2
+      description: Second spot on Controller 1
+      controller: Art-Net Controller 1
+      slot: 1
+    - name: DMX Spot 3
+      description: Third spot on Controller 1
+      controller: Art-Net Controller 1
+      slot: 2
+    - name: DMX Spot 4
+      description: Fourth spot on Controller 1
+      controller: Art-Net Controller 1
+      slot: 3
+    - name: DMX Spot 5
+      description: Fifth spot on Controller 1
+      controller: Art-Net Controller 1
+      slot: 4
