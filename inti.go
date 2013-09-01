@@ -2,7 +2,7 @@ package main
 
 import (
     "flag"
-    "net.as65342/inti/dmx"
+    "github.com/r3boot/inti/dmx"
 )
 
 var debug = flag.Bool("D", false, "Enable debugging")
