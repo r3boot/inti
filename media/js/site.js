@@ -34,11 +34,11 @@ function load_configuration() {
         url: '/config',
         type: 'get',
         success: function(response) {
-            store_set('spots', response['spots'])
-            load_spots(response['spots'])
+            store_set('controllers', response['Controllers'])
+            load_controllers(response['Controllers'])
 
-            store_set('groups', response['groups'])
-            load_groups(response['groups'])
+            store_set('groups', response['Groups'])
+            load_groups(response['Groups'])
         },
         error: function(xhr, textStatus, errorThrown) {
             console.log('Failed to load configuration: '+textStatus+', '+errorThrown)
@@ -46,27 +46,28 @@ function load_configuration() {
     })
 }
 
-function load_spots(spots) {
-    var content = '<h4>Available spots</h4>'
-    content += '<div class="row">'
-    content += '<div class="span1"><b>Name</b></div>'
-    content += '<div class="span3"><b>Description</b></div>'
-    content += '<div class="span2"><b>Location</b></div>'
-    content += '<div class="span1"><b>Slot</b></div>'
-    content += '<div class="span1"><b>Color</b></div>'
-    content += '</div>'
+function load_controllers(controllers) {
+    var content = '<h4>Available Controllers</h4>'
 
-    var keys = Object.keys(spots)
-    keys.sort()
-    for (var i=0; i<keys.length; i++) {
-        var spot_name = keys[i]
-        var spot_info = spots[spot_name]
+    for (cid=0; cid < controllers.length; cid++) {
         content += '<div class="row">'
-        content += '<div class="span1">'+spot_name+'</div>'
-        content += '<div class="span3">'+spot_info['description']+'</div>'
-        content += '<div class="span2">'+spot_info['location']+'</div>'
-        content += '<div class="span1">'+spot_info['slot']+'</div>'
-        content += '<div class="span1">#000000</div>'
+        content += '<div class="span4">'
+        content += 'Name: '+controllers[cid].Name+'<br/>'
+        content += 'Description: '+controllers[cid].Description+'<br/>'
+        content += '</div>'
+
+        content += '<div class="span8">'
+        for (var sid=0; sid < controllers[cid].Spots.length; sid++) {
+            var spot_info = controllers[cid].Spots[sid]
+            content += '<div class="row">'
+            content += '<div class="span2">'+spot_info['Name']+'</div>'
+            content += '<div class="span3">'+spot_info['Description']+'</div>'
+            content += '<div class="span1">'+spot_info['R']+'</div>'
+            content += '<div class="span1">'+spot_info['G']+'</div>'
+            content += '<div class="span1">'+spot_info['B']+'</div>'
+            content += '</div>'
+        }
+        content += '</div>'
         content += '</div>'
     }
 
@@ -75,23 +76,26 @@ function load_spots(spots) {
 
 function load_groups(groups) {
     var content = '<h4>Available groups</h4>'
-    content += '<div class="row">'
-    content += '<div class="span1"><b>Name</b></div>'
-    content += '<div class="span3"><b>Description</b></div>'
-    content += '<div class="span2"><b>Location</b></div>'
-    content += '<div class="span3"><b>Spots</b></div>'
-    content += '</div>'
 
-    var keys = Object.keys(groups)
-    keys.sort()
-    for (var i=0; i<keys.length; i++) {
-        var group_name = keys[i]
-        var group_info = groups[group_name]
+    for (gid=0; gid < groups.length; gid++) {
         content += '<div class="row">'
-        content += '<div class="span1">'+group_name+'</div>'
-        content += '<div class="span3">'+group_info['description']+'</div>'
-        content += '<div class="span2">'+group_info['location']+'</div>'
-        content += '<div class="span3">'+group_info['spots']+'</div>'
+        content += '<div class="span4">'
+        content += 'Name: '+groups[gid].Name+'<br/>'
+        content += 'Description: '+groups[gid].Description+'<br/>'
+        content += '</div>'
+
+        content += '<div class="span8">'
+        for (var sid=0; sid < groups[gid].Spots.length; sid++) {
+            var spot_info = groups[gid].Spots[sid]
+            content += '<div class="row">'
+            content += '<div class="span2">'+spot_info['Name']+'</div>'
+            content += '<div class="span3">'+spot_info['Description']+'</div>'
+            content += '<div class="span1">'+spot_info['R']+'</div>'
+            content += '<div class="span1">'+spot_info['G']+'</div>'
+            content += '<div class="span1">'+spot_info['B']+'</div>'
+            content += '</div>'
+        }
+        content += '</div>'
         content += '</div>'
     }
 

@@ -11,9 +11,10 @@ var listenAddr string = "localhost:7231"
 
 var FrameQueue chan queue.FrameQueueItem
 
-func setupRouting() (err error) {
+func setupRouting () (err error) {
     r := mux.NewRouter()
     r.HandleFunc("/ping", PingHandler).Methods("GET")
+    r.HandleFunc("/config", ConfigHandler).Methods("GET")
     r.HandleFunc("/frame", FrameHandler).Methods("PUT")
     r.HandleFunc("/js/{name}", FileServerHandler).Methods("GET")
     r.HandleFunc("/img/{name}", FileServerHandler).Methods("GET")
@@ -23,12 +24,12 @@ func setupRouting() (err error) {
     return
 }
 
-func Setup(listen_addr string) (err error) {
+func Setup (listen_addr string) (err error) {
     if err = setupRouting(); err != nil { log.Fatal(err) }
     return
 }
 
-func Run() (err error) {
+func Run () (err error) {
     log.Print("Starting server on http://"+listenAddr)
     if err = http.ListenAndServe(listenAddr, nil); err != nil {
         log.Fatal(err)

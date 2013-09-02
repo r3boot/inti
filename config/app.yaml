@@ -29,3 +29,16 @@ rgb_spots:
       description: Fifth spot on Controller 1
       controller: Art-Net Controller 1
       slot: 4
+
+groups:
+    - name: even
+      description: All evenly slotted spots
+      spots:
+        - DMX Spot 2
+        - DMX Spot 4
+    - name: odd
+      description: All odd slotted spots
+      spots:
+        - DMX Spot 1
+        - DMX Spot 3
+        - DMX Spot 5

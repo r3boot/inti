@@ -9,6 +9,7 @@ import (
 
 const DMX_DEVICE uint8 = 0x80
 const ARTNET_DEVICE uint8 = 0x40
+const MAX_GROUPS int = 4096
 
 type Controller struct {
     Name string
@@ -32,6 +33,14 @@ type RgbSpot struct {
 }
 var NumRgbSpots int = 0
 
+type Group struct {
+    Name string
+    Description string
+    Spots []RgbSpot
+}
+var Groups []Group
+var NumGroups int = 0
+
 var cfgFile yaml.File
 
 var FrameQueue chan queue.FrameQueueItem
@@ -40,9 +49,11 @@ func Setup(config_file string) (err error) {
     if err := ReadConfigFile(config_file); err != nil { log.Fatal(err) }
     if err := MapControllers(); err != nil { log.Fatal(err) }
     if err := MapRgbSpots(); err != nil { log.Fatal(err) }
+    if err := MapGroups(); err != nil { log.Fatal(err) }
 
-    log.Print("Mapped "+strconv.Itoa(NumControllers)+" controllers")
-    log.Print("Mapped "+strconv.Itoa(NumRgbSpots)+" led spots")
+    log.Print("Mapped "+strconv.Itoa(NumControllers)+" controller(s)")
+    log.Print("Mapped "+strconv.Itoa(NumRgbSpots)+" led spot(s)")
+    log.Print("Mapped "+strconv.Itoa(NumGroups)+" group(s)")
 
     return
 }
@@ -128,6 +139,19 @@ func GetControllerId(name string) (result int, err error) {
     return
 }
 
+func GetRgbSpotId(name string) (ctl_id int, spot_id int, err error) {
+    for id := 0; id < NumControllers; id++ {
+        for sid := 0; sid < len(Controllers[id].Slots); sid++ {
+            if Controllers[id].Slots[sid].Name == name {
+                ctl_id = id
+                spot_id = sid
+                return
+            }
+        }
+    }
+    return
+}
+
 func MapRgbSpots() (err error) {
     var ctl_id int
     for id := 0; id < MAX_DMX_RGB_SPOTS; id++ {
@@ -162,4 +186,33 @@ func MapRgbSpots() (err error) {
     return
 }
 
-
+func MapGroups() (err error) {
+    for id := 0; id < MAX_GROUPS; id++ {
+        base := "groups["+strconv.Itoa(id)+"]."
+        if _, err = cfgFile.Get(base + "name"); err != nil {
+            err = nil
+            break
+        }
+        var group = new(Group)
+        var ctl_id, spot_id int
+        setStr(&group.Name, base + "name")
+        setStr(&group.Description, base + "description")
+        for sid := 0; sid < MAX_DMX_RGB_SPOTS; sid++ {
+            var spot_name string
+            s_base := base + "spots["+strconv.Itoa(sid)+"]"
+            if _, err = cfgFile.Get(s_base); err != nil {
+                err = nil
+                break
+            }
+            setStr(&spot_name, s_base)
+            ctl_id, spot_id, err = GetRgbSpotId(spot_name)
+            if err != nil {
+                log.Fatal(err)
+            }
+            group.Spots = append(group.Spots, Controllers[ctl_id].Slots[spot_id])
+        }
+        Groups = append(Groups, *group)
+        NumGroups += 1
+    }
+    return
+}

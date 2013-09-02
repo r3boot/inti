@@ -364,7 +364,6 @@ func ArtnetQueueRunner() (err error) {
         qi := <- ArtnetQueue
 
         p := ConstructArtDmxPacket()
-        log.Print("len: "+strconv.Itoa(len(qi.frame)-1))
         p.Length = byteswap(uint16(len(qi.frame)))
         b := new(bytes.Buffer)
         if err = binary.Write(b, binary.LittleEndian, p); err != nil {
