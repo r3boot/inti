@@ -121,9 +121,15 @@ function setup_colorwheel() {
             parseInt(color.r), parseInt(color.g), parseInt(color.b),
             parseInt(color.r), parseInt(color.g), parseInt(color.b),
             parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
+            parseInt(color.r), parseInt(color.g), parseInt(color.b),
         ]
         var frame_data = {}
         frame_data['frame'] = colors
+        frame_data['duration'] = 20
 
         $.ajax({
             url: '/frame',

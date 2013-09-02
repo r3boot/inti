@@ -126,6 +126,13 @@ var bcastSendSocket net.UDPConn
 var bcastRecvSocket net.UDPConn
 var lastSequence uint8 = 0
 
+type ArtnetQueueItem struct {
+    dev_id int
+    frame []byte
+    duration time.Duration
+}
+var ArtnetQueue = make(chan *ArtnetQueueItem, 255)
+
 func init() {
     var cidr net.IP
     var network *net.IPNet
@@ -272,6 +279,7 @@ func ProbeArtnetDevices(network net.IPNet) (err error) {
 
             ArtnetDevices[NumArtnetDevices] = device
             NumArtnetDevices += 1
+            log.Print("Found "+device.IP.String())
         }
 
 
@@ -350,15 +358,24 @@ func GetArtnetDeviceId(name string) (id int, err error) {
     return
 }
 
-func SendArtnetFrame(dev_id int, frame []uint8) (err error) {
-    p := ConstructArtDmxPacket()
-    p.Length = byteswap(uint16(len(frame)))
-    b := new(bytes.Buffer)
-    if err = binary.Write(b, binary.LittleEndian, p); err != nil {
-        log.Fatal(err)
+func ArtnetQueueRunner() (err error) {
+    log.Print("Starting Art-Net queue runner")
+    for {
+        qi := <- ArtnetQueue
+
+        p := ConstructArtDmxPacket()
+        log.Print("len: "+strconv.Itoa(len(qi.frame)-1))
+        p.Length = byteswap(uint16(len(qi.frame)))
+        b := new(bytes.Buffer)
+        if err = binary.Write(b, binary.LittleEndian, p); err != nil {
+            log.Fatal(err)
+        }
+        buf := append(b.Bytes(), qi.frame...)
+        fmt.Print(hex.Dump(buf))
+        ArtnetDevices[qi.dev_id].Fd.Write(buf)
+        time.Sleep(qi.duration)
     }
-    buf := append(b.Bytes(), frame...)
-    fmt.Print(hex.Dump(buf))
-    ArtnetDevices[dev_id].Fd.Write(buf)
     return
 }
+
+

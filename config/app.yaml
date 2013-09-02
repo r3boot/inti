@@ -5,7 +5,7 @@ controllers:
       id: 1
     - name: Art-Net Controller 1
       description: First Art-Net controller
-      device: 10.42.12.130
+      device: 10.42.14.111
       id: 1
 
 rgb_spots:

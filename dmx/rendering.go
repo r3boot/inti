@@ -3,6 +3,7 @@ package dmx
 import (
     "log"
     "time"
+    "github.com/r3boot/inti/queue"
 )
 
 func SetDmxRgbSpot(cid int, sid int, r byte, g byte, b byte) (err error) {
@@ -37,16 +38,35 @@ func RenderFrame(duration time.Duration) (err error) {
             frame[offset+2] = b
         }
 
+        d_ms := duration * time.Millisecond
         switch Controllers[cid].DeviceType {
         default:
             continue
         case DMX_DEVICE:
-            SendDmxFrame(Controllers[cid].DeviceId, frame)
+            DmxQueue <- &DmxQueueItem{Controllers[cid].DeviceId, frame, d_ms}
         case ARTNET_DEVICE:
-            SendArtnetFrame(Controllers[cid].DeviceId, frame)
+            ArtnetQueue <- &ArtnetQueueItem{Controllers[cid].DeviceId, frame, d_ms}
         }
     }
-    time.Sleep(duration * time.Millisecond)
 
     return
+}
+
+func FrameQueueRunner() {
+    var qi queue.FrameQueueItem
+    log.Print("Starting Frame queue runner")
+    for {
+        qi = <- FrameQueue
+        for cid := 0; cid < NumControllers; cid++ {
+            switch Controllers[cid].DeviceType {
+            default:
+                continue
+            case DMX_DEVICE:
+                DmxQueue <- &DmxQueueItem{Controllers[cid].DeviceId, qi.Frame, qi.Duration}
+            case ARTNET_DEVICE:
+                ArtnetQueue <- &ArtnetQueueItem{Controllers[cid].DeviceId, qi.Frame, qi.Duration}
+            }
+
+        }
+    }
 }

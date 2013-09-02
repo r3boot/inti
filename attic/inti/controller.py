@@ -14,7 +14,7 @@ class Controller(BaseClass, threading.Thread):
         self.stop = False
         BaseClass.__init__(self, output)
         self._fd = self._setup_fd(dmx_port)
-        self._spots = self._setup_spots(num_spots)
+        self._spots = self._setup_spots(10)
         self._q = queue
         self._p = policer
         self._is_black = False

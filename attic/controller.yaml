@@ -20,6 +20,26 @@ spots:
         slot: 4
         description: Fifth RGB led spot
         location: Nowhere
+    rgb_6:
+        slot: 5
+        description: Sixth RGB led spot
+        location: Nowhere
+    rgb_7:
+        slot: 6
+        description: Seventh RGB led spot
+        location: Nowhere
+    rgb_8:
+        slot: 7
+        description: Eight RGB led spot
+        location: Nowhere
+    rgb_9:
+        slot: 8
+        description: Nineth RGB led spot
+        location: Nowhere
+    rgb_10:
+        slot: 9
+        description: Tenth RGB led spot
+        location: Nowhere
 
 groups:
     even:
@@ -41,4 +61,4 @@ limits:
     max_per_ip: 600
 
 webapp:
-    media: /people/r3boot/git/inti/media
+    media: /people/r3boot/Projects/go/src/github.com/r3boot/inti/attic/media

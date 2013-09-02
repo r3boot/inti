@@ -4,6 +4,7 @@ import (
     "log"
     "strconv"
     "github.com/kylelemons/go-gypsy/yaml"
+    "github.com/r3boot/inti/queue"
 )
 
 const DMX_DEVICE uint8 = 0x80
@@ -33,13 +34,17 @@ var NumRgbSpots int = 0
 
 var cfgFile yaml.File
 
-func SetupMappings(config_file string) {
+var FrameQueue chan queue.FrameQueueItem
+
+func Setup(config_file string) (err error) {
     if err := ReadConfigFile(config_file); err != nil { log.Fatal(err) }
     if err := MapControllers(); err != nil { log.Fatal(err) }
     if err := MapRgbSpots(); err != nil { log.Fatal(err) }
 
     log.Print("Mapped "+strconv.Itoa(NumControllers)+" controllers")
     log.Print("Mapped "+strconv.Itoa(NumRgbSpots)+" led spots")
+
+    return
 }
 
 func ReadConfigFile(file_name string) (err error) {
@@ -156,3 +161,5 @@ func MapRgbSpots() (err error) {
 
     return
 }
+
+

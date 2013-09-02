@@ -5,7 +5,7 @@ import (
     "log"
     "os"
     "strconv"
-    //"time"
+    "time"
 )
 
 const MAX_DEVICES = 10
@@ -19,6 +19,13 @@ type UsbDevice struct {
 }
 var UsbDevices = make([]UsbDevice, MAX_DEVICES)
 var NumUsbDevices int = 0
+
+type DmxQueueItem struct {
+    dev_id int
+    frame []byte
+    duration time.Duration
+}
+var DmxQueue = make(chan *DmxQueueItem, 255)
 
 func init() {
     for id := 0; id < MAX_DEVICES; id++ {
@@ -55,7 +62,13 @@ func GetUsbDeviceId(name string) (id int, err error) {
     return
 }
 
-func SendDmxFrame(dev_id int, frame []uint8) (err error) {
-    log.Print("sending dmx frame")
+func UsbQueueRunner() (err error) {
+    log.Print("Starting DMX queue runner")
+    for {
+        qi := <- DmxQueue
+
+        UsbDevices[qi.dev_id].Fd.Write(qi.frame)
+        time.Sleep(qi.duration)
+    }
     return
 }
