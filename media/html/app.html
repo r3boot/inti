@@ -5,25 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
     <link href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <style>
+      body {
+        padding-top: 5px; /* 60px to make the container go all the way to the bottom of the topbar */
+      }
+    </style>
+    <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
   </head>
   <body>
+
     <div class="container-fluid" id="content">
 
       <div class="tabbable">
 
-        <ul class="nav nav-tabs">
-          <li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
-          <li><a href="#colorwheel" data-toggle="tab">Color wheel</a></li>
+        <ul id="main_content" class="nav nav-tabs">
+          <li class="dropdown active">
+            <a id="a_overview" href="#" class="dropdown-toggle" data-toggle="dropdown">Overview <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#controllers" data-toggle="tab">Controllers</a></li>
+              <li><a href="#groups" data-toggle="tab">Groups</a></li>
+            </ul>
+          </li>
+
+          <li><a href="#colorwheel" data-toggle="tab">Colorwheel</a></li>
         </ul>
 
         <div class="tab-content">
 
-          <div class="tab-pane active" id="overview">
+          <!-- Controllers tab -->
+          <div class="tab-pane fade in active" id="controllers">
             <p /><div class="container" id="available_spots"></div>
+          </div>
+
+          <!-- Groups tab -->
+          <div class="tab-pane fade" id="groups">
             <p /><div class="container" id="available_groups"></div>
           </div>
 
-          <div class="tab-pane" id="colorwheel">
+          <!-- Colorwheel tab -->
+          <div class="tab-pane fade" id="colorwheel">
+
             <div style="float:left; width:100%; margin-bottom:20px">
               <div class="cw_id" style="float:left; margin-right:20px; width:300px; text-align:left;"></div>
               <div style="float:left; width:50%">
@@ -31,6 +52,7 @@
                 <div class="cw_ondrag" style="display:none;"><b>You are dragging the wheel</b></div>
               </div>
             </div>
+
           </div>
 
         </div>

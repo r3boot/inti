@@ -6,7 +6,6 @@ import (
     "io/ioutil"
     "log"
     "strings"
-    "strconv"
     "net/http"
     "github.com/r3boot/inti/queue"
     "github.com/r3boot/inti/dmx"
@@ -105,7 +104,6 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
         config.Controllers = append(config.Controllers, controller)
     }
 
-    log.Print("dmx.NumGroups: "+strconv.Itoa(dmx.NumGroups))
     for gid := 0; gid < dmx.NumGroups; gid++ {
         group = *new(CfgGroup)
         group.Name = dmx.Groups[gid].Name

@@ -27,6 +27,9 @@ function reset_store() {
     store_set('groups', {})
 }
 
+function rgb_to_hex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1,7);
+}
 
 // BEGIN: Application initialization
 function load_configuration() {
@@ -59,12 +62,11 @@ function load_controllers(controllers) {
         content += '<div class="span8">'
         for (var sid=0; sid < controllers[cid].Spots.length; sid++) {
             var spot_info = controllers[cid].Spots[sid]
+            var color = rgb_to_hex(spot_info['R'],spot_info['G'],spot_info['B'])
             content += '<div class="row">'
             content += '<div class="span2">'+spot_info['Name']+'</div>'
             content += '<div class="span3">'+spot_info['Description']+'</div>'
-            content += '<div class="span1">'+spot_info['R']+'</div>'
-            content += '<div class="span1">'+spot_info['G']+'</div>'
-            content += '<div class="span1">'+spot_info['B']+'</div>'
+            content += '<div class="span1" style="background-color:'+color+'">'+color+'</div>'
             content += '</div>'
         }
         content += '</div>'
@@ -87,12 +89,11 @@ function load_groups(groups) {
         content += '<div class="span8">'
         for (var sid=0; sid < groups[gid].Spots.length; sid++) {
             var spot_info = groups[gid].Spots[sid]
+            var color = rgb_to_hex(spot_info['R'],spot_info['G'],spot_info['B'])
             content += '<div class="row">'
             content += '<div class="span2">'+spot_info['Name']+'</div>'
             content += '<div class="span3">'+spot_info['Description']+'</div>'
-            content += '<div class="span1">'+spot_info['R']+'</div>'
-            content += '<div class="span1">'+spot_info['G']+'</div>'
-            content += '<div class="span1">'+spot_info['B']+'</div>'
+            content += '<div class="span1" style="background-color:'+color+'">'+color+'</div>'
             content += '</div>'
         }
         content += '</div>'
@@ -147,15 +148,10 @@ function setup_colorwheel() {
     })
 }
 
-function setup_application() {
-    $('#overview a').click(function (e) {
-        e.preventdefault();
-        $(this).tab('show');
-    })
-
-    $('#colorwheel a').click(function (e) {
-        e.preventdefault();
-        $(this).tab('show');
+function setup_eventhandlers() {
+    $('#a_overview').click(function(e) {
+        console.log("a_overview clicked")
+        load_configuration()
     })
 }
 
@@ -163,8 +159,8 @@ function main() {
     $(document).ready(function() {
         s = new Persist.Store('inti')
         reset_store()
+        setup_eventhandlers()
         load_configuration()
-        setup_application()
         setup_colorwheel()
     })
 }

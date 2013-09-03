@@ -338,7 +338,7 @@ func ParseArtPollReplyPacket(buf []byte) (d ArtnetDevice, err error) {
     d.WebManagement = (p.Status2 & StWebManagement) == StWebManagement
     d.DHCPConfigured = (p.Status2 & StDhcpConfigured) == StDhcpConfigured
     d.DHCPCapable = (p.Status2 & StDhcpCapable) == StDhcpCapable
-    d.Mac, err = net.ParseMAC(fmt.Sprintf("%x0:%x:%x:%x:%x:%x", p.MacHi, p.Mac1, p.Mac2, p.Mac3, p.Mac4, p.MacLo))
+    d.Mac, err = net.ParseMAC(fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", p.MacHi, p.Mac1, p.Mac2, p.Mac3, p.Mac4, p.MacLo))
     if err != nil {
         log.Fatal(err)
     }

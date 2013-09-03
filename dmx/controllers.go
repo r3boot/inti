@@ -1,6 +1,7 @@
 package dmx
 
 import (
+    "errors"
     "log"
     "strconv"
     "github.com/kylelemons/go-gypsy/yaml"
@@ -36,10 +37,17 @@ var NumRgbSpots int = 0
 type Group struct {
     Name string
     Description string
-    Spots []RgbSpot
+    Spots []*RgbSpot
 }
 var Groups []Group
 var NumGroups int = 0
+
+type GroupMember struct {
+    Spot RgbSpot
+    Groups []*Group
+}
+var GroupMembership []GroupMember
+var NumGroupMemberships int = 0
 
 var cfgFile yaml.File
 
@@ -133,9 +141,10 @@ func GetControllerId(name string) (result int, err error) {
     for id := 0; id < NumControllers; id++ {
         if Controllers[id].Name == name {
             result = id
-            break
+            return
         }
     }
+    err = errors.New("dmx.GetControllerId: no such controller "+name)
     return
 }
 
@@ -147,6 +156,18 @@ func GetRgbSpotId(name string) (ctl_id int, spot_id int, err error) {
                 spot_id = sid
                 return
             }
+        }
+    }
+    err = errors.New("dmx.GetRgbSpotId: no such spot "+name)
+    return
+}
+
+func GetMembershipId(name string) (id int, err error) {
+    for gid := 0; gid < NumGroupMemberships; gid++ {
+        if GroupMembership[gid].Spot.Name == name {
+            gid = id
+            err = nil
+            return 
         }
     }
     return
@@ -175,11 +196,18 @@ func MapRgbSpots() (err error) {
             log.Fatal(err)
         }
         if ctl_id, err = GetControllerId(controller_name); err != nil {
-            log.Fatal(err)
+            log.Print(err)
+            continue
         }
 
         Controllers[ctl_id].Slots = append(Controllers[ctl_id].Slots, *spot)
+
+        var membership = new(GroupMember)
+        membership.Spot = *spot
+        GroupMembership = append(GroupMembership, *membership)
+
         NumRgbSpots += 1
+        NumGroupMemberships += 1
 
     }
 
@@ -207,12 +235,25 @@ func MapGroups() (err error) {
             setStr(&spot_name, s_base)
             ctl_id, spot_id, err = GetRgbSpotId(spot_name)
             if err != nil {
-                log.Fatal(err)
+                log.Print(err)
+                continue
             }
-            group.Spots = append(group.Spots, Controllers[ctl_id].Slots[spot_id])
+            group.Spots = append(group.Spots, &Controllers[ctl_id].Slots[spot_id])
         }
         Groups = append(Groups, *group)
         NumGroups += 1
+
     }
+
+    for gid := 0; gid < NumGroups; gid++ {
+        for sid := 0; sid < len(Groups[gid].Spots); sid++ {
+            mid, err := GetMembershipId(Groups[gid].Spots[sid].Name)
+            if err != nil {
+                log.Fatal(err)
+            }
+            GroupMembership[mid].Groups = append(GroupMembership[mid].Groups, &Groups[gid])
+        }
+    }
+
     return
 }
