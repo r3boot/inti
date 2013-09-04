@@ -134,8 +134,6 @@ type ArtnetQueueItem struct {
 var ArtnetQueue = make(chan *ArtnetQueueItem, 255)
 
 func init() {
-
-    /*
     var cidr net.IP
     var network *net.IPNet
 
@@ -158,7 +156,6 @@ func init() {
         log.Print("Sending Art-Net Poll on "+network.String())
         ProbeArtnetDevices(*network)
     }
-    */
 }
 
 func CloseArtnetSockets() {
