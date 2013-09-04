@@ -2,7 +2,9 @@ package main
 
 import (
     "flag"
+    "fmt"
     "log"
+    "net"
     "github.com/r3boot/inti/api"
     "github.com/r3boot/inti/dmx"
     "github.com/r3boot/inti/queue"
@@ -16,6 +18,20 @@ var frameQueue = make(chan queue.FrameQueueItem, 512)
 
 func init() {
     var err error
+    var mac_str string
+    var mac net.HardwareAddr
+
+    log.Print("inti -- the zarya release")
+
+    mac_str = fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", 0x0, 0x13, 0x37, 0x0, 0x0, 0x0)
+    mac,err = net.ParseMAC(mac_str)
+    log.Print("mac_str: "+mac_str)
+    log.Print("mac: "+mac.String())
+
+    mac_str = fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", 0x00, 0x13, 0x37, 0x00, 0x00, 0x01)
+    mac,err = net.ParseMAC(mac_str)
+    log.Print("mac_str: "+mac_str)
+    log.Print("mac: "+mac.String())
 
     flag.Parse()
 
