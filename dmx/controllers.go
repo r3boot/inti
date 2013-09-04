@@ -19,6 +19,7 @@ type Controller struct {
     Description string
     Universe int
     Id int
+    BufSize int
     Slots []RgbSpot
 }
 var Controllers []Controller
@@ -28,6 +29,7 @@ type RgbSpot struct {
     Name string
     Description string
     Slot int
+    Id int
     Red byte
     Green byte
     Blue byte
@@ -38,6 +40,7 @@ type Group struct {
     Name string
     Description string
     Spots []*RgbSpot
+    BufSize int
 }
 var Groups []Group
 var NumGroups int = 0
@@ -173,8 +176,21 @@ func GetMembershipId(name string) (id int, err error) {
     return
 }
 
+func GetControllerBySpot(name string) (id int, err error) {
+    for cid := 0; cid < NumControllers; cid++ {
+        for sid := 0; sid < len(Controllers[cid].Slots); sid++ {
+            if Controllers[cid].Slots[sid].Name == name {
+                id = cid
+                return
+            }
+        }
+    }
+    return
+}
+
 func MapRgbSpots() (err error) {
     var ctl_id int
+    var highest_id int = 0
     for id := 0; id < MAX_DMX_RGB_SPOTS; id++ {
         base := "rgb_spots["+strconv.Itoa(id)+"]."
         if _, err = cfgFile.Get(base + "name"); err != nil {
@@ -200,6 +216,7 @@ func MapRgbSpots() (err error) {
             continue
         }
 
+        spot.Id = Controllers[ctl_id].Id + spot.Slot
         Controllers[ctl_id].Slots = append(Controllers[ctl_id].Slots, *spot)
 
         var membership = new(GroupMember)
@@ -211,10 +228,25 @@ func MapRgbSpots() (err error) {
 
     }
 
+    for cid := 0; cid < NumControllers; cid++ {
+        highest_id = 0
+        for sid := 0; sid < len(Controllers[cid].Slots); sid++ {
+            if Controllers[cid].Slots[sid].Id > highest_id {
+                highest_id = Controllers[cid].Slots[sid].Id
+            }
+        }
+        Controllers[cid].BufSize = highest_id + 3
+    }
+
     return
 }
 
 func MapGroups() (err error) {
+    var all_groups = new(Group)
+    all_groups.Name = "All"
+    all_groups.Description = "All spots available"
+    var highest_id int = 0
+
     for id := 0; id < MAX_GROUPS; id++ {
         base := "groups["+strconv.Itoa(id)+"]."
         if _, err = cfgFile.Get(base + "name"); err != nil {
@@ -239,20 +271,35 @@ func MapGroups() (err error) {
                 continue
             }
             group.Spots = append(group.Spots, &Controllers[ctl_id].Slots[spot_id])
+            all_groups.Spots = append(all_groups.Spots, &Controllers[ctl_id].Slots[spot_id])
+
         }
         Groups = append(Groups, *group)
         NumGroups += 1
 
     }
+    Groups = append(Groups, *all_groups)
+    NumGroups += 1
 
     for gid := 0; gid < NumGroups; gid++ {
+        highest_id = 0
         for sid := 0; sid < len(Groups[gid].Spots); sid++ {
             mid, err := GetMembershipId(Groups[gid].Spots[sid].Name)
             if err != nil {
                 log.Fatal(err)
             }
             GroupMembership[mid].Groups = append(GroupMembership[mid].Groups, &Groups[gid])
+
+            cid,err := GetControllerBySpot(Groups[gid].Spots[sid].Name)
+            if err != nil {
+                log.Fatal(err)
+            }
+
+            if Controllers[cid].Slots[sid].Id > highest_id {
+                highest_id = Controllers[cid].Slots[sid].Id
+            }
         }
+        Groups[gid].BufSize = highest_id + 3
     }
 
     return

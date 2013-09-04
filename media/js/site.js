@@ -1,8 +1,11 @@
+var groups = []
+var controllers = []
+var current_target
+
 // BEGIN: LocalStorage functions
 function store_get(k) {
     try {
         v = s.get(k)
-        console.log('store_get: '+k+' = '+v)
         if (v == 'false') {
             return false
         } else if (v == 'true') {
@@ -16,7 +19,6 @@ function store_get(k) {
 }
 
 function store_set(k, v) {
-    console.log('store_set: '+k+' = '+JSON.stringify(v))
     s.set(k, JSON.stringify(v))
     s.save()
 }
@@ -25,6 +27,7 @@ function reset_store() {
     console.log('resetting LocalStorage')
     store_set('spots', {})
     store_set('groups', {})
+    store_set('current_target', null)
 }
 
 function rgb_to_hex(r, g, b) {
@@ -37,11 +40,14 @@ function load_configuration() {
         url: '/config',
         type: 'get',
         success: function(response) {
-            store_set('controllers', response['Controllers'])
+            controllers = response['Controllers']
             load_controllers(response['Controllers'])
 
-            store_set('groups', response['Groups'])
+            groups = response['Groups']
             load_groups(response['Groups'])
+
+            setup_target_menu(response['Controllers'], response['Groups'])
+
         },
         error: function(xhr, textStatus, errorThrown) {
             console.log('Failed to load configuration: '+textStatus+', '+errorThrown)
@@ -103,6 +109,43 @@ function load_groups(groups) {
     $('#available_groups').html(content)
 }
 
+function setup_target_menu(controllers, groups) {
+    var content = '<ul class="nav nav-list well">'
+    content += '<li class="nav-header">Select target</li>'
+    content += '<ul class="nav nav-list">'
+    content += '<li class="nav-header">By group</li>'
+    for (gid = 0; gid < groups.length; gid++) {
+        content += '<li id="m_group_'+gid+'"><a href="#">'+groups[gid].Name+'</a></li>'
+    }
+    content += '</ul>'
+    content += '<ul class="nav nav-list">'
+    content += '<li class="nav-header">By controller</li>'
+
+    for (cid = 0; cid < controllers.length; cid++) {
+        content += '<li id="m_controller_'+cid+'"><a href="#">'+controllers[cid].Name+'</a></li>'
+    }
+    content += '</ul>'
+    content += '</ul>'
+
+    $('#cw_menu').html(content)
+
+    for (gid = 0; gid < groups.length; gid++) {
+        $('#m_group_'+gid).click(function(e) {
+            $('#'+current_target).removeClass('active')
+            $(this).addClass('active')
+            current_target = this.id
+        })
+    }
+
+    for (cid = 0; cid < controllers.length; cid++) {
+        $('#m_controller_'+cid).click(function(e) {
+            $('#'+current_target).removeClass('active')
+            $(this).addClass('active')
+            current_target = this.id
+        })
+    }
+}
+
 function setup_colorwheel() {
     var cw = Raphael.colorwheel($(".cw_id")[0],300)
     var onchange_el = $(".cw_onchange")
@@ -120,27 +163,39 @@ function setup_colorwheel() {
     cw.ondrag(start, stop);
 
     cw.onchange(function(color) {
-        var colors = [
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-            parseInt(color.r), parseInt(color.g), parseInt(color.b),
-        ]
+        console.log(current_target)
+
+        if (current_target.indexOf('m_group_') > -1) {
+            id = parseInt(current_target.replace('m_group_', ''))
+            target = groups[id]
+        } else {
+            id = parseInt(current_target.replace('m_controller_', ''))
+            target = controllers[id]
+        }
+
+        var colors = []
+        for (i = 0; i < target.BufSize+1; i++) {
+            colors[i] = 0
+        }
+
+        for (sid = 0; sid < target.Spots.length; sid++) {
+            offset = target.Spots[sid].Id - 1
+            console.log(offset)
+            colors[offset] = parseInt(color.r)
+            colors[offset+1] = parseInt(color.g)
+            colors[offset+2] = parseInt(color.b)
+        }
+
         var frame_data = {}
         frame_data['frame'] = colors
         frame_data['duration'] = 20
+        console.log(colors)
 
         $.ajax({
             url: '/frame',
             type: 'put',
             data: JSON.stringify(frame_data),
-            dataType: 'json',
+            ataType: 'json',
             error: function(xhr, textStatus, errorThrown) {
                 console.log('request failed: '+textStatus+'; '+errorThrown)
             }

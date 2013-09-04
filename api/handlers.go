@@ -16,6 +16,7 @@ const MEDIA string = "/people/r3boot/Projects/go/src/github.com/r3boot/inti/medi
 type CfgRgbSpot struct {
     Name string
     Description string
+    Id int
     R uint8
     G uint8
     B uint8
@@ -24,13 +25,16 @@ type CfgRgbSpot struct {
 type CfgController struct {
     Name string
     Description string
+    Id int
     Spots []CfgRgbSpot
+    BufSize int
 }
 
 type CfgGroup struct {
     Name string
     Description string
     Spots []CfgRgbSpot
+    BufSize int
 }
 
 type Config struct {
@@ -90,12 +94,15 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
         controller = *new(CfgController)
         controller.Name = dmx.Controllers[cid].Name
         controller.Description = dmx.Controllers[cid].Description
+        controller.Id = dmx.Controllers[cid].Id
         controller.Spots = *new([]CfgRgbSpot)
+        controller.BufSize = dmx.Controllers[cid].BufSize
 
         for sid := 0; sid < len(dmx.Controllers[cid].Slots); sid++ {
             spot = *new(CfgRgbSpot)
             spot.Name = dmx.Controllers[cid].Slots[sid].Name
             spot.Description = dmx.Controllers[cid].Slots[sid].Description
+            spot.Id = controller.Id + (dmx.Controllers[cid].Slots[sid].Slot * 3)
             spot.R = dmx.Controllers[cid].Slots[sid].Red
             spot.G = dmx.Controllers[cid].Slots[sid].Green
             spot.B = dmx.Controllers[cid].Slots[sid].Blue
@@ -109,6 +116,7 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
         group.Name = dmx.Groups[gid].Name
         group.Description = dmx.Groups[gid].Description
         group.Spots = *new([]CfgRgbSpot)
+        group.BufSize = dmx.Groups[gid].BufSize
 
         for sid := 0; sid < len(dmx.Groups[gid].Spots); sid++ {
 
@@ -116,6 +124,7 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
 
             spot.Name = dmx.Groups[gid].Spots[sid].Name
             spot.Description = dmx.Groups[gid].Spots[sid].Description
+            spot.Id = controller.Id + (dmx.Groups[gid].Spots[sid].Slot * 3)
             spot.R = dmx.Groups[gid].Spots[sid].Red
             spot.G = dmx.Groups[gid].Spots[sid].Green
             spot.B = dmx.Groups[gid].Spots[sid].Blue
@@ -150,9 +159,11 @@ func FrameHandler (w http.ResponseWriter, r *http.Request) {
     var buf = make([]byte, len(data.Frame)+1)
 
     for i := 0; i<len(data.Frame)-1; i++ {
+        
         buf[i+1] = data.Frame[i]
     }
     data.Frame = buf
+    log.Print(data.Frame)
 
     FrameQueue <- data
 }
