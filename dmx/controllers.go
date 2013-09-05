@@ -19,6 +19,7 @@ type Controller struct {
     Description string
     Universe int
     Id int
+    Path uint16
     BufSize int
     Slots []RgbSpot
 }
@@ -30,6 +31,7 @@ type RgbSpot struct {
     Description string
     Slot int
     Id int
+    Path uint16
     Red byte
     Green byte
     Blue byte
@@ -56,7 +58,21 @@ var cfgFile yaml.File
 
 var FrameQueue chan queue.FrameQueueItem
 
-func Setup(config_file string) (err error) {
+func PathToSid (path uint16) (cid uint8, sid uint8) {
+    cid = uint8(path >> 8)
+    sid = uint8(path & 0x00ff)
+    return
+}
+
+func CidToPath (cid uint8) (path uint16) {
+    return uint16(cid << 8)
+}
+
+func SidToPath (cid uint8, sid uint8) (path uint16) {
+    return uint16((cid << 8) + sid)
+}
+
+func Setup (config_file string) (err error) {
     if err := ReadConfigFile(config_file); err != nil { log.Fatal(err) }
     if err := MapControllers(); err != nil { log.Fatal(err) }
     if err := MapRgbSpots(); err != nil { log.Fatal(err) }
@@ -69,7 +85,7 @@ func Setup(config_file string) (err error) {
     return
 }
 
-func ReadConfigFile(file_name string) (err error) {
+func ReadConfigFile (file_name string) (err error) {
     config, err := yaml.ReadFile(file_name)
     if err != nil {
         log.Fatal(err)
@@ -79,7 +95,7 @@ func ReadConfigFile(file_name string) (err error) {
     return
 }
 
-func setStr(dst *string, key string) {
+func setStr (dst *string, key string) {
     var value string
     var err error
     if value, err = cfgFile.Get(key); err != nil {
@@ -88,7 +104,7 @@ func setStr(dst *string, key string) {
     *dst = value
 }
 
-func setInt(dst *int, key string) {
+func setInt (dst *int, key string) {
     var value string
     var err error
     if value, err = cfgFile.Get(key); err != nil {
@@ -99,10 +115,10 @@ func setInt(dst *int, key string) {
     }
 }
 
-func MapControllers() (err error) {
+func MapControllers () (err error) {
     var device_id int
-    for id := 0; id < MAX_ARTNET_DEVICES; id++ {
-        base := "controllers["+strconv.Itoa(id)+"]."
+    for cid := 0; cid < MAX_ARTNET_DEVICES; cid++ {
+        base := "controllers["+strconv.Itoa(cid)+"]."
         if _, err = cfgFile.Get(base + "name"); err != nil {
             err = nil
             return
@@ -137,10 +153,14 @@ func MapControllers() (err error) {
         NumControllers += 1
     }
 
+    for cid := 0; cid < NumControllers; cid++ {
+        Controllers[cid].Path = CidToPath(uint8(cid))
+    }
+
     return
 }
 
-func GetControllerId(name string) (result int, err error) {
+func GetControllerId (name string) (result int, err error) {
     for id := 0; id < NumControllers; id++ {
         if Controllers[id].Name == name {
             result = id
@@ -151,7 +171,7 @@ func GetControllerId(name string) (result int, err error) {
     return
 }
 
-func GetRgbSpotId(name string) (ctl_id int, spot_id int, err error) {
+func GetRgbSpotId (name string) (ctl_id int, spot_id int, err error) {
     for id := 0; id < NumControllers; id++ {
         for sid := 0; sid < len(Controllers[id].Slots); sid++ {
             if Controllers[id].Slots[sid].Name == name {
@@ -165,7 +185,7 @@ func GetRgbSpotId(name string) (ctl_id int, spot_id int, err error) {
     return
 }
 
-func GetMembershipId(name string) (id int, err error) {
+func GetMembershipId (name string) (id int, err error) {
     for gid := 0; gid < NumGroupMemberships; gid++ {
         if GroupMembership[gid].Spot.Name == name {
             gid = id
@@ -176,7 +196,7 @@ func GetMembershipId(name string) (id int, err error) {
     return
 }
 
-func GetControllerBySpot(name string) (id int, err error) {
+func GetControllerBySpot (name string) (id int, err error) {
     for cid := 0; cid < NumControllers; cid++ {
         for sid := 0; sid < len(Controllers[cid].Slots); sid++ {
             if Controllers[cid].Slots[sid].Name == name {
@@ -188,7 +208,7 @@ func GetControllerBySpot(name string) (id int, err error) {
     return
 }
 
-func MapRgbSpots() (err error) {
+func MapRgbSpots () (err error) {
     var ctl_id int
     var highest_id int = 0
     for id := 0; id < MAX_DMX_RGB_SPOTS; id++ {
@@ -238,10 +258,16 @@ func MapRgbSpots() (err error) {
         Controllers[cid].BufSize = highest_id + 3
     }
 
+    for cid := 0; cid < NumControllers; cid++ {
+        for sid := 0; sid < len(Controllers[cid].Slots); sid++ {
+            Controllers[cid].Slots[sid].Path = SidToPath(uint8(cid), uint8(sid))
+        }
+    }
+
     return
 }
 
-func MapGroups() (err error) {
+func MapGroups () (err error) {
     var all_groups = new(Group)
     all_groups.Name = "All"
     all_groups.Description = "All spots available"

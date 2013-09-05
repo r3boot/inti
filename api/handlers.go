@@ -1,10 +1,12 @@
 package api
 
 import (
-    //"encoding/hex"
+    "encoding/hex"
     "encoding/json"
     "io/ioutil"
     "log"
+    "fmt"
+    //"strconv"
     "strings"
     "net/http"
     "github.com/r3boot/inti/queue"
@@ -16,6 +18,7 @@ const MEDIA string = "/people/r3boot/Projects/go/src/github.com/r3boot/inti/medi
 type CfgRgbSpot struct {
     Name string
     Description string
+    Path uint16
     Id int
     R uint8
     G uint8
@@ -26,6 +29,7 @@ type CfgController struct {
     Name string
     Description string
     Id int
+    Path uint16
     Spots []CfgRgbSpot
     BufSize int
 }
@@ -42,9 +46,30 @@ type Config struct {
     Groups []CfgGroup
 }
 
+type RgbValue struct {
+    P uint16
+    R uint8
+    G uint8
+    B uint8
+}
+
+type RenderData struct {
+    V []RgbValue
+    D int
+}
+
+
 func logEntry (r *http.Request, caller string) {
     addr := strings.Split(r.RemoteAddr, ":")[0]
     log.Print(addr+" - "+r.RequestURI+" ("+caller+")")
+}
+
+func pathToId(path int) (cid int, sid int, err error) {
+    return
+}
+
+func cidToPath(cid int) (path int, err error) {
+    return
 }
 
 func PingHandler (w http.ResponseWriter, r *http.Request) {
@@ -80,6 +105,7 @@ func FileServerHandler (w http.ResponseWriter, r *http.Request) {
 }
 
 func ConfigHandler (w http.ResponseWriter, r *http.Request) {
+    logEntry(r, "ConfigHandler")
     var controller CfgController
     var group CfgGroup
     var spot CfgRgbSpot
@@ -95,6 +121,7 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
         controller.Name = dmx.Controllers[cid].Name
         controller.Description = dmx.Controllers[cid].Description
         controller.Id = dmx.Controllers[cid].Id
+        controller.Path = dmx.Controllers[cid].Path
         controller.Spots = *new([]CfgRgbSpot)
         controller.BufSize = dmx.Controllers[cid].BufSize
 
@@ -103,6 +130,7 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
             spot.Name = dmx.Controllers[cid].Slots[sid].Name
             spot.Description = dmx.Controllers[cid].Slots[sid].Description
             spot.Id = controller.Id + (dmx.Controllers[cid].Slots[sid].Slot * 3)
+            spot.Path = dmx.Controllers[cid].Slots[sid].Path
             spot.R = dmx.Controllers[cid].Slots[sid].Red
             spot.G = dmx.Controllers[cid].Slots[sid].Green
             spot.B = dmx.Controllers[cid].Slots[sid].Blue
@@ -125,6 +153,7 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
             spot.Name = dmx.Groups[gid].Spots[sid].Name
             spot.Description = dmx.Groups[gid].Spots[sid].Description
             spot.Id = controller.Id + (dmx.Groups[gid].Spots[sid].Slot * 3)
+            spot.Path = dmx.Groups[gid].Spots[sid].Path
             spot.R = dmx.Groups[gid].Spots[sid].Red
             spot.G = dmx.Groups[gid].Spots[sid].Green
             spot.B = dmx.Groups[gid].Spots[sid].Blue
@@ -144,6 +173,7 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
 }
 
 func FrameHandler (w http.ResponseWriter, r *http.Request) {
+    logEntry(r, "FrameHandler")
     var body []byte
     var err error
     if body, err = ioutil.ReadAll(r.Body); err != nil {
@@ -166,4 +196,33 @@ func FrameHandler (w http.ResponseWriter, r *http.Request) {
     log.Print(data.Frame)
 
     FrameQueue <- data
+}
+
+func RenderHandler (w http.ResponseWriter, r *http.Request) {
+    logEntry(r, "RenderHandler")
+
+    var body []byte
+    var err error
+
+    if body, err = ioutil.ReadAll(r.Body); err != nil {
+        log.Print(err)
+        return
+    }
+
+    fmt.Print(hex.Dump(body))
+
+    var d RenderData
+    if err = json.Unmarshal(body, &d); err != nil {
+        log.Print(err)
+        return
+    }
+
+    log.Print(d)
+    for i := 0; i < len(d.V); i++ {
+        cid, sid := dmx.PathToSid(d.V[i].P)
+        // log.Print("cid: "+strconv.Itoa(int(cid))+"; sid: "+strconv.Itoa(int(sid)))
+        dmx.SetDmxRgbSpot(int(cid), int(sid), d.V[i].R, d.V[i].G, d.V[i].B)
+    }
+    dmx.RenderFrame(20)
+    
 }

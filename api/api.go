@@ -16,6 +16,7 @@ func setupRouting () (err error) {
     r.HandleFunc("/ping", PingHandler).Methods("GET")
     r.HandleFunc("/config", ConfigHandler).Methods("GET")
     r.HandleFunc("/frame", FrameHandler).Methods("PUT")
+    r.HandleFunc("/render", RenderHandler).Methods("PUT")
     r.HandleFunc("/js/{name}", FileServerHandler).Methods("GET")
     r.HandleFunc("/img/{name}", FileServerHandler).Methods("GET")
     r.HandleFunc("/css/{name}", FileServerHandler).Methods("GET")

@@ -72,6 +72,7 @@ function load_controllers(controllers) {
             content += '<div class="row">'
             content += '<div class="span2">'+spot_info['Name']+'</div>'
             content += '<div class="span3">'+spot_info['Description']+'</div>'
+            content += '<div class="span1">'+spot_info['Path']+'</div>'
             content += '<div class="span1" style="background-color:'+color+'">'+color+'</div>'
             content += '</div>'
         }
@@ -99,6 +100,7 @@ function load_groups(groups) {
             content += '<div class="row">'
             content += '<div class="span2">'+spot_info['Name']+'</div>'
             content += '<div class="span3">'+spot_info['Description']+'</div>'
+            content += '<div class="span1">'+spot_info['Path']+'</div>'
             content += '<div class="span1" style="background-color:'+color+'">'+color+'</div>'
             content += '</div>'
         }
@@ -163,7 +165,6 @@ function setup_colorwheel() {
     cw.ondrag(start, stop);
 
     cw.onchange(function(color) {
-        console.log(current_target)
 
         if (current_target.indexOf('m_group_') > -1) {
             id = parseInt(current_target.replace('m_group_', ''))
@@ -173,28 +174,24 @@ function setup_colorwheel() {
             target = controllers[id]
         }
 
-        var colors = []
-        for (i = 0; i < target.BufSize+1; i++) {
-            colors[i] = 0
-        }
-
+        var render_data = {}
+        render_data['V'] = []
+        render_data['D'] = 20
         for (sid = 0; sid < target.Spots.length; sid++) {
-            offset = target.Spots[sid].Id - 1
-            console.log(offset)
-            colors[offset] = parseInt(color.r)
-            colors[offset+1] = parseInt(color.g)
-            colors[offset+2] = parseInt(color.b)
+            spot = {
+                "P": target.Spots[sid].Path,
+                "R": parseInt(color.r),
+                "G": parseInt(color.g),
+                "B": parseInt(color.b),
+            }
+            render_data['V'].push(spot)
         }
-
-        var frame_data = {}
-        frame_data['frame'] = colors
-        frame_data['duration'] = 20
-        console.log(colors)
+        console.log(render_data)
 
         $.ajax({
-            url: '/frame',
+            url: '/render',
             type: 'put',
-            data: JSON.stringify(frame_data),
+            data: JSON.stringify(render_data),
             ataType: 'json',
             error: function(xhr, textStatus, errorThrown) {
                 console.log('request failed: '+textStatus+'; '+errorThrown)
