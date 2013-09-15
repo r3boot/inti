@@ -27,7 +27,7 @@ type DmxQueueItem struct {
 }
 var DmxQueue = make(chan *DmxQueueItem, 255)
 
-func init() {
+func DoDmxDiscovery() {
     for id := 0; id < MAX_DEVICES; id++ {
         device_name := "/dev/dmx" + strconv.Itoa(id)
         fd, err := os.OpenFile(device_name, os.O_WRONLY, 0666)

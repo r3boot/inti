@@ -1,9 +1,9 @@
 package dmx
 
 import (
-    "errors"
+    //"errors"
     "log"
-    "strconv"
+    //"strconv"
     "github.com/kylelemons/go-gypsy/yaml"
     "github.com/r3boot/inti/queue"
 )
@@ -72,116 +72,19 @@ func SidToPath (cid uint8, sid uint8) (path uint16) {
     return uint16((cid << 8) + sid)
 }
 
-func Setup (config_file string) (err error) {
-    if err := ReadConfigFile(config_file); err != nil { log.Fatal(err) }
-    if err := MapControllers(); err != nil { log.Fatal(err) }
-    if err := MapRgbSpots(); err != nil { log.Fatal(err) }
-    if err := MapGroups(); err != nil { log.Fatal(err) }
-
-    log.Print("Mapped "+strconv.Itoa(NumControllers)+" controller(s)")
-    log.Print("Mapped "+strconv.Itoa(NumRgbSpots)+" led spot(s)")
-    log.Print("Mapped "+strconv.Itoa(NumGroups)+" group(s)")
-
-    return
-}
-
-func ReadConfigFile (file_name string) (err error) {
-    config, err := yaml.ReadFile(file_name)
-    if err != nil {
-        log.Fatal(err)
-    }
-    cfgFile = *config
-
-    return
-}
-
-func setStr (dst *string, key string) {
-    var value string
-    var err error
-    if value, err = cfgFile.Get(key); err != nil {
-        log.Fatal(err)
-    }
-    *dst = value
-}
-
-func setInt (dst *int, key string) {
-    var value string
-    var err error
-    if value, err = cfgFile.Get(key); err != nil {
-        log.Fatal(err)
-    }
-    if *dst, err = strconv.Atoi(value); err != nil {
-        log.Fatal(err)
-    }
-}
-
-func MapControllers () (err error) {
-    var device_id int
-    for cid := 0; cid < MAX_ARTNET_DEVICES; cid++ {
-        base := "controllers["+strconv.Itoa(cid)+"]."
-        if _, err = cfgFile.Get(base + "name"); err != nil {
-            err = nil
-            return
-        }
-
-        var controller = new(Controller)
-        setStr(&controller.Name, base + "name")
-        setStr(&controller.Description, base + "description")
-        setInt(&controller.Id, base + "id")
-
-        var device_name string
-        if device_name, err = cfgFile.Get(base + "device"); err != nil {
-            log.Fatal(err)
-        }
-
-        if device_name[0] == '/' {
-            if device_id, err = GetUsbDeviceId(device_name); err != nil {
-                log.Print("Cannot find DMX USB device "+device_name)
-                continue
-            }
-            controller.DeviceType = DMX_DEVICE
-        } else {
-            if device_id, err = GetArtnetDeviceId(device_name); err != nil {
-                log.Print("Cannot find Art-Net device "+device_name)
-                continue
-            }
-            controller.DeviceType = ARTNET_DEVICE
-        }
-        controller.DeviceId = device_id
-
-        Controllers = append(Controllers, *controller)
-        NumControllers += 1
+func Setup (cfg_file string, disable_dmx bool, disable_artnet bool) (err error) {
+    if ! disable_dmx {
+        DoDmxDiscovery()
+    } else {
+        log.Print("Disabling DMX discovery")
     }
 
-    for cid := 0; cid < NumControllers; cid++ {
-        Controllers[cid].Path = CidToPath(uint8(cid))
+    if ! disable_artnet {
+        DoArtnetDiscovery()
+    } else {
+        log.Print("Disabling Art-Net discovery")
     }
 
-    return
-}
-
-func GetControllerId (name string) (result int, err error) {
-    for id := 0; id < NumControllers; id++ {
-        if Controllers[id].Name == name {
-            result = id
-            return
-        }
-    }
-    err = errors.New("dmx.GetControllerId: no such controller "+name)
-    return
-}
-
-func GetRgbSpotId (name string) (ctl_id int, spot_id int, err error) {
-    for id := 0; id < NumControllers; id++ {
-        for sid := 0; sid < len(Controllers[id].Slots); sid++ {
-            if Controllers[id].Slots[sid].Name == name {
-                ctl_id = id
-                spot_id = sid
-                return
-            }
-        }
-    }
-    err = errors.New("dmx.GetRgbSpotId: no such spot "+name)
     return
 }
 
@@ -208,65 +111,7 @@ func GetControllerBySpot (name string) (id int, err error) {
     return
 }
 
-func MapRgbSpots () (err error) {
-    var ctl_id int
-    var highest_id int = 0
-    for id := 0; id < MAX_DMX_RGB_SPOTS; id++ {
-        base := "rgb_spots["+strconv.Itoa(id)+"]."
-        if _, err = cfgFile.Get(base + "name"); err != nil {
-            err = nil
-            break
-        }
-
-        var spot = new(RgbSpot)
-        setStr(&spot.Name, base + "name")
-        setStr(&spot.Description, base + "description")
-        setInt(&spot.Slot, base + "slot")
-
-        spot.Red = 0
-        spot.Green = 0
-        spot.Blue = 0
-
-        var controller_name string
-        if controller_name, err = cfgFile.Get(base + "controller"); err != nil {
-            log.Fatal(err)
-        }
-        if ctl_id, err = GetControllerId(controller_name); err != nil {
-            log.Print(err)
-            continue
-        }
-
-        spot.Id = Controllers[ctl_id].Id + spot.Slot
-        Controllers[ctl_id].Slots = append(Controllers[ctl_id].Slots, *spot)
-
-        var membership = new(GroupMember)
-        membership.Spot = *spot
-        GroupMembership = append(GroupMembership, *membership)
-
-        NumRgbSpots += 1
-        NumGroupMemberships += 1
-
-    }
-
-    for cid := 0; cid < NumControllers; cid++ {
-        highest_id = 0
-        for sid := 0; sid < len(Controllers[cid].Slots); sid++ {
-            if Controllers[cid].Slots[sid].Id > highest_id {
-                highest_id = Controllers[cid].Slots[sid].Id
-            }
-        }
-        Controllers[cid].BufSize = highest_id + 3
-    }
-
-    for cid := 0; cid < NumControllers; cid++ {
-        for sid := 0; sid < len(Controllers[cid].Slots); sid++ {
-            Controllers[cid].Slots[sid].Path = SidToPath(uint8(cid), uint8(sid))
-        }
-    }
-
-    return
-}
-
+/*
 func MapGroups () (err error) {
     var all_groups = new(Group)
     all_groups.Name = "All"
@@ -330,3 +175,4 @@ func MapGroups () (err error) {
 
     return
 }
+*/

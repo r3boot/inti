@@ -133,7 +133,7 @@ type ArtnetQueueItem struct {
 }
 var ArtnetQueue = make(chan *ArtnetQueueItem, 255)
 
-func init() {
+func DoArtnetDiscovery() {
     var cidr net.IP
     var network *net.IPNet
 

@@ -1,0 +1,57 @@
+templates:
+    - name: rgb_spot
+      description: 3 channel RGB PWM spot
+      channels:
+          - name: Red
+          - name: Green
+          - name: Blue
+
+fixtures:
+    - name: RGB spot #1
+      template: rgb_spot
+      id: 1
+    - name: RGB spot #2
+      template: rgb_spot
+      id: 4
+    - name: RGB spot #3
+      template: rgb_spot
+      id: 7
+    - name: RGB spot #4
+      template: rgb_spot
+      id: 10
+    - name: RGB spot #5
+      template: rgb_spot
+      id: 13
+    - name: RGB spot #6
+      template: rgb_spot
+      id: 16
+    - name: RGB spot #7
+      template: rgb_spot
+      id: 19
+    - name: RGB spot #8
+      template: rgb_spot
+      id: 22
+    - name: RGB spot #9
+      template: rgb_spot
+      id: 25
+    - name: RGB spot #10
+      template: rgb_spot
+      id: 28
+
+groups:
+    - name: even
+      description: All evenly slotted spots
+      spots:
+        - RGB spot #2
+        - RGB spot #4
+        - RGB spot #6
+        - RGB spot #8
+        - RGB spot #10
+    - name: odd
+      description: All odd slotted spots
+      spots:
+        - RGB spot #1
+        - RGB spot #3
+        - RGB spot #5
+        - RGB spot #7
+        - RGB spot #9

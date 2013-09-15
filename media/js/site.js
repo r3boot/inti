@@ -1,6 +1,7 @@
 var groups = []
 var controllers = []
 var current_target
+var cw
 
 // BEGIN: LocalStorage functions
 function store_get(k) {
@@ -35,7 +36,7 @@ function rgb_to_hex(r, g, b) {
 }
 
 // BEGIN: Application initialization
-function load_configuration() {
+function load_configuration(cw) {
     $.ajax({
         url: '/config',
         type: 'get',
@@ -46,7 +47,7 @@ function load_configuration() {
             groups = response['Groups']
             load_groups(response['Groups'])
 
-            setup_target_menu(response['Controllers'], response['Groups'])
+            setup_target_menu(response['Controllers'], response['Groups'], cw)
 
         },
         error: function(xhr, textStatus, errorThrown) {
@@ -146,10 +147,12 @@ function setup_target_menu(controllers, groups) {
             current_target = this.id
         })
     }
+
+    console.log(rgb_to_hex())
 }
 
-function setup_colorwheel() {
-    var cw = Raphael.colorwheel($(".cw_id")[0],300)
+function setup_colorwheel(cw) {
+    // var cw = Raphael.colorwheel($(".cw_id")[0],300)
     var onchange_el = $(".cw_onchange")
     var ondrag_el = $(".cw_ondrag")
     cw.color("#F00");
@@ -212,8 +215,9 @@ function main() {
         s = new Persist.Store('inti')
         reset_store()
         setup_eventhandlers()
-        load_configuration()
-        setup_colorwheel()
+        cw = Raphael.colorwheel($(".cw_id")[0],300)
+        load_configuration(cw)
+        setup_colorwheel(cw)
     })
 }
 

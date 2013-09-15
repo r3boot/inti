@@ -1,11 +1,11 @@
 package api
 
 import (
-    "encoding/hex"
+    // "encoding/hex"
     "encoding/json"
     "io/ioutil"
     "log"
-    "fmt"
+    // "fmt"
     //"strconv"
     "strings"
     "net/http"
@@ -193,7 +193,7 @@ func FrameHandler (w http.ResponseWriter, r *http.Request) {
         buf[i+1] = data.Frame[i]
     }
     data.Frame = buf
-    log.Print(data.Frame)
+    // log.Print(data.Frame)
 
     FrameQueue <- data
 }
@@ -209,7 +209,7 @@ func RenderHandler (w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    fmt.Print(hex.Dump(body))
+    // fmt.Print(hex.Dump(body))
 
     var d RenderData
     if err = json.Unmarshal(body, &d); err != nil {
@@ -220,7 +220,6 @@ func RenderHandler (w http.ResponseWriter, r *http.Request) {
     log.Print(d)
     for i := 0; i < len(d.V); i++ {
         cid, sid := dmx.PathToSid(d.V[i].P)
-        // log.Print("cid: "+strconv.Itoa(int(cid))+"; sid: "+strconv.Itoa(int(sid)))
         dmx.SetDmxRgbSpot(int(cid), int(sid), d.V[i].R, d.V[i].G, d.V[i].B)
     }
     dmx.RenderFrame(20)
