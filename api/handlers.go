@@ -10,51 +10,16 @@ import (
     "strings"
     "net/http"
     "github.com/r3boot/inti/queue"
-    "github.com/r3boot/inti/dmx"
+    "github.com/r3boot/inti/config"
 )
 
 const MEDIA string = "/people/r3boot/Projects/go/src/github.com/r3boot/inti/media"
 
-type CfgChannel struct {
-    Name string
-    Value uint8
-    Feature uint8
-}
-
-type CfgFixture struct {
-
-}
-
-type CfgRgbSpot struct {
-    Name string
-    Description string
-    Path uint16
-    Id int
-    R uint8
-    G uint8
-    B uint8
-}
-
-type CfgController struct {
-    Name string
-    Description string
-    Id int
-    Path uint16
-    Spots []CfgRgbSpot
-    BufSize int
-}
-
-type CfgGroup struct {
-    Name string
-    Description string
-    Spots []CfgRgbSpot
-    BufSize int
-}
-
 type Config struct {
-    Controllers []CfgController
-    Groups []CfgGroup
+    Fixtures []config.Fixture
+    Groups []config.Group
 }
+var json_cfg Config
 
 type RgbValue struct {
     P uint16
@@ -116,67 +81,15 @@ func FileServerHandler (w http.ResponseWriter, r *http.Request) {
 
 func ConfigHandler (w http.ResponseWriter, r *http.Request) {
     logEntry(r, "ConfigHandler")
-    var controller CfgController
-    //var group CfgGroup
-    var spot CfgRgbSpot
+
+    var cfg = new(Config)
     var buf []byte
     var err error
 
-    var config = new(Config)
-    config.Controllers = *new([]CfgController)
-    config.Groups = *new([]CfgGroup)
+    cfg.Fixtures = config.Fixtures
+    cfg.Groups = config.Groups
 
-    for cid := 0; cid < dmx.NumControllers; cid++ {
-        controller = *new(CfgController)
-        controller.Name = dmx.Controllers[cid].Name
-        controller.Description = dmx.Controllers[cid].Description
-        controller.Id = dmx.Controllers[cid].Id
-        controller.Path = dmx.Controllers[cid].Path
-        controller.Spots = *new([]CfgRgbSpot)
-        controller.BufSize = dmx.Controllers[cid].BufSize
-
-        for sid := 0; sid < len(dmx.Controllers[cid].Slots); sid++ {
-            spot = *new(CfgRgbSpot)
-            spot.Name = dmx.Controllers[cid].Slots[sid].Name
-            spot.Description = dmx.Controllers[cid].Slots[sid].Description
-            spot.Id = controller.Id + (dmx.Controllers[cid].Slots[sid].Slot * 3)
-            spot.Path = dmx.Controllers[cid].Slots[sid].Path
-            spot.R = dmx.Controllers[cid].Slots[sid].Red
-            spot.G = dmx.Controllers[cid].Slots[sid].Green
-            spot.B = dmx.Controllers[cid].Slots[sid].Blue
-            controller.Spots = append(controller.Spots, spot)
-        }
-        config.Controllers = append(config.Controllers, controller)
-    }
-
-    /*
-    for gid := 0; gid < dmx.NumGroups; gid++ {
-        group = *new(CfgGroup)
-        group.Name = dmx.Groups[gid].Name
-        group.Description = dmx.Groups[gid].Description
-        group.Spots = *new([]CfgRgbSpot)
-        group.BufSize = dmx.Groups[gid].BufSize
-
-        for sid := 0; sid < len(dmx.Groups[gid].Spots); sid++ {
-
-            spot = *new(CfgRgbSpot)
-
-            spot.Name = dmx.Groups[gid].Spots[sid].Name
-            spot.Description = dmx.Groups[gid].Spots[sid].Description
-            spot.Id = controller.Id + (dmx.Groups[gid].Spots[sid].Slot * 3)
-            spot.Path = dmx.Groups[gid].Spots[sid].Path
-            spot.R = dmx.Groups[gid].Spots[sid].Red
-            spot.G = dmx.Groups[gid].Spots[sid].Green
-            spot.B = dmx.Groups[gid].Spots[sid].Blue
-
-            group.Spots = append(group.Spots, spot)
-
-        }
-        config.Groups = append(config.Groups, group)
-    }
-    */
-
-    if buf, err = json.Marshal(config); err != nil {
+    if buf, err = json.Marshal(cfg); err != nil {
         log.Fatal(err)
     }
 
@@ -230,10 +143,12 @@ func RenderHandler (w http.ResponseWriter, r *http.Request) {
     }
 
     log.Print(d)
+    /*
     for i := 0; i < len(d.V); i++ {
         cid, sid := dmx.PathToSid(d.V[i].P)
         dmx.SetDmxRgbSpot(int(cid), int(sid), d.V[i].R, d.V[i].G, d.V[i].B)
     }
     dmx.RenderFrame(20)
+    */
     
 }
