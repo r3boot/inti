@@ -15,6 +15,16 @@ import (
 
 const MEDIA string = "/people/r3boot/Projects/go/src/github.com/r3boot/inti/media"
 
+type CfgChannel struct {
+    Name string
+    Value uint8
+    Feature uint8
+}
+
+type CfgFixture struct {
+
+}
+
 type CfgRgbSpot struct {
     Name string
     Description string
@@ -107,7 +117,7 @@ func FileServerHandler (w http.ResponseWriter, r *http.Request) {
 func ConfigHandler (w http.ResponseWriter, r *http.Request) {
     logEntry(r, "ConfigHandler")
     var controller CfgController
-    var group CfgGroup
+    //var group CfgGroup
     var spot CfgRgbSpot
     var buf []byte
     var err error
@@ -139,6 +149,7 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
         config.Controllers = append(config.Controllers, controller)
     }
 
+    /*
     for gid := 0; gid < dmx.NumGroups; gid++ {
         group = *new(CfgGroup)
         group.Name = dmx.Groups[gid].Name
@@ -163,6 +174,7 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
         }
         config.Groups = append(config.Groups, group)
     }
+    */
 
     if buf, err = json.Marshal(config); err != nil {
         log.Fatal(err)

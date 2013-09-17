@@ -1,16 +1,12 @@
-package dmx
+package config
 
 import (
-    "errors"
     "log"
     "strconv"
     "github.com/kylelemons/go-gypsy/yaml"
 )
 
-const CHAN_FEAT_PWM uint8 = 0x1
-const CHAN_FEAT_ONOFF uint8 = 0x2
-
-const MAX_CHANNELS int = 512
+var cfgFile yaml.File
 
 type Channel struct {
     Name string
@@ -32,68 +28,50 @@ type Fixture struct {
 }
 var Fixtures []Fixture
 
-func Setup (cfg_file string, disable_dmx bool, disable_artnet bool) (err error) {
-    if ! disable_dmx {
-        DoDmxDiscovery()
-    } else {
-        log.Print("Disabling DMX discovery")
-    }
+type Group struct {
+    Name string
+    Description string
+    Fixtures []*Fixture
+}
+var Groups []Group
 
-    if ! disable_artnet {
-        DoArtnetDiscovery()
-    } else {
-        log.Print("Disabling Art-Net discovery")
-    }
+type GroupMember struct {
+    Fixture *Fixture
+    Groups []*Group
+}
+var GroupMembership []GroupMember
 
-    if err := ReadConfigFile(cfg_file); err != nil { log.Fatal(err) }
-    if err := LoadFixtureTemplates(); err != nil { log.Fatal(err) }
-    if err := LoadFixtures(); err != nil { log.Fatal(err) }
+func Setup (file_name string) (err error) {
+    if err = ReadConfigFile(file_name); err != nil { return }
+    if err = LoadFixtureTemplates(); err != nil { return }
+    if err = LoadFixtures(); err != nil { return }
+    if err = LoadGroups(); err != nil { return }
 
     log.Print("Loaded "+strconv.Itoa(len(FixtureTemplates))+" fixture template(s)")
     log.Print("Loaded "+strconv.Itoa(len(Fixtures))+" fixture(s)")
-
+    log.Print("Loaded "+strconv.Itoa(len(Groups)-1)+" group(s)")
     return
 }
 
 func ReadConfigFile (file_name string) (err error) {
     config, err := yaml.ReadFile(file_name)
-    if err != nil {
-        log.Fatal(err)
-    }
+    if err != nil { return }
     cfgFile = *config
-
     return
 }
 
 func setStr (dst *string, key string) {
     var value string
     var err error
-    if value, err = cfgFile.Get(key); err != nil {
-        log.Fatal(err)
-    }
+    if value, err = cfgFile.Get(key); err != nil { return }
     *dst = value
 }
 
 func setInt (dst *int, key string) {
     var value string
     var err error
-    if value, err = cfgFile.Get(key); err != nil {
-        log.Fatal(err)
-    }
-    if *dst, err = strconv.Atoi(value); err != nil {
-        log.Fatal(err)
-    }
-}
-
-func getFixtureTemplateId (name string) (tid int, err error) {
-    for tid = 0; tid < len(FixtureTemplates); tid++ {
-        if FixtureTemplates[tid].Name == name {
-            return
-        }
-    }
-    tid = -1
-    err = errors.New("getFixtureTemplate: "+name+" does not exist")
-    return
+    if value, err = cfgFile.Get(key); err != nil { return }
+    if *dst, err = strconv.Atoi(value); err != nil { return }
 }
 
 func LoadFixtureTemplates () (err error) {
@@ -101,6 +79,7 @@ func LoadFixtureTemplates () (err error) {
     for {
         base := "templates["+strconv.Itoa(tid)+"]."
         if _, err = cfgFile.Get(base + "name"); err != nil {
+
             err = nil
             break
         }
@@ -155,7 +134,7 @@ func LoadFixtures () (err error) {
         setStr(&fixture.Name, base + "name")
         setInt(&fixture.Id, base + "id")
         setStr(&template, base + "template")
-        if tid, err = getFixtureTemplateId(template); err != nil {
+        if tid, err = GetFixtureTemplateId(template); err != nil {
             return
         }
 
@@ -163,5 +142,45 @@ func LoadFixtures () (err error) {
         Fixtures = append(Fixtures, *fixture)
         fid += 1
     }
+    return
+}
+
+func LoadGroups () (err error) {
+    var all_group = new(Group)
+    all_group.Name = "All"
+    all_group.Description = "All fixtures"
+
+    for fid := 0; fid < len(Fixtures); fid++ {
+        all_group.Fixtures = append(all_group.Fixtures, &Fixtures[fid])
+    }
+    Groups = append(Groups, *all_group)
+
+    for gid := 0; gid < MAX_GROUPS; gid++ {
+        base := "groups["+strconv.Itoa(gid)+"]."
+        if _, err = cfgFile.Get(base + "name"); err != nil {
+            err = nil
+            break
+        }
+        var group = new(Group)
+        var fid int
+        setStr(&group.Name, base + "name")
+        setStr(&group.Description, base + "description")
+
+        var fixture_name string
+        for mid := 0; mid < MAX_GROUP_MEMBERS; mid++ {
+            f_base := base + "fixtures["+strconv.Itoa(mid)+"]."
+            if fixture_name, err = cfgFile.Get(f_base + "name"); err != nil {
+                err = nil
+                break
+            }
+            if fid, err = GetFixtureId(fixture_name); err != nil { return }
+
+            group.Fixtures = append(group.Fixtures, &Fixtures[fid])
+
+        }
+
+        Groups = append(Groups, *group)
+    }
+
     return
 }

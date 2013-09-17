@@ -1,11 +1,3 @@
-templates:
-    - name: rgb_spot
-      description: 3 channel RGB PWM spot
-      channels:
-          - name: Red
-          - name: Green
-          - name: Blue
-
 fixtures:
     - name: RGB spot #1
       template: rgb_spot
@@ -41,17 +33,35 @@ fixtures:
 groups:
     - name: even
       description: All evenly slotted spots
-      spots:
-        - RGB spot #2
-        - RGB spot #4
-        - RGB spot #6
-        - RGB spot #8
-        - RGB spot #10
+      fixtures:
+        - name: RGB spot #2
+        - name: RGB spot #4
+        - name: RGB spot #6
+        - name: RGB spot #8
+        - name: RGB spot #10
     - name: odd
       description: All odd slotted spots
-      spots:
-        - RGB spot #1
-        - RGB spot #3
-        - RGB spot #5
-        - RGB spot #7
-        - RGB spot #9
+      fixtures:
+        - name: RGB spot #1
+        - name: RGB spot #3
+        - name: RGB spot #5
+        - name: RGB spot #7
+        - name: RGB spot #9
+
+templates:
+    - name: rgb_spot
+      description: 3 channel RGB PWM spot
+      channels:
+          - name: Red
+          - name: Green
+          - name: Blue
+    - name: pwm_spot
+      description: Single channel PWM spot
+      channels:
+          - name: Intensity
+    - name: switched_spot
+      description: On/Off switchable spot
+      channels:
+          - name: Intensity
+            feature: onoff
+
