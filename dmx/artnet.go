@@ -119,8 +119,7 @@ type ArtnetDevice struct {
     DHCPConfigured bool
     DHCPCapable bool
 }
-var ArtnetDevices = make([]ArtnetDevice, MAX_ARTNET_DEVICES)
-var NumArtnetDevices int = 0
+var ArtnetDevices []ArtnetDevice
 
 var bcastSendSocket net.UDPConn
 var bcastRecvSocket net.UDPConn
@@ -131,7 +130,7 @@ type ArtnetQueueItem struct {
     frame []byte
     duration time.Duration
 }
-var ArtnetQueue = make(chan *ArtnetQueueItem, 255)
+var ArtnetQueue = make(chan *Frame, 1024)
 
 func DoArtnetDiscovery() {
     var cidr net.IP
@@ -159,7 +158,7 @@ func DoArtnetDiscovery() {
 }
 
 func CloseArtnetSockets() {
-    for id := 0; id < NumArtnetDevices; id++ {
+    for id := 0; id < len(ArtnetDevices); id++ {
         ArtnetDevices[id].Fd.Close()
     }
 }
@@ -277,15 +276,14 @@ func ProbeArtnetDevices(network net.IPNet) (err error) {
             })
             device.Fd = *fd
 
-            ArtnetDevices[NumArtnetDevices] = device
-            NumArtnetDevices += 1
+            ArtnetDevices = append(ArtnetDevices, device)
             log.Print("Found "+device.IP.String())
         }
 
 
     }
 
-    log.Print("Found "+strconv.Itoa(NumArtnetDevices)+" Art-Net device(s)")
+    log.Print("Found "+strconv.Itoa(len(ArtnetDevices))+" Art-Net device(s)")
 
     return
 }
@@ -361,18 +359,28 @@ func GetArtnetDeviceId(name string) (id int, err error) {
 func ArtnetQueueRunner() (err error) {
     log.Print("Starting Art-Net queue runner")
     for {
-        qi := <- ArtnetQueue
+        frame := <- ArtnetQueue
+
+        if ! EnableArtnet {
+            continue
+        } else if len(ArtnetDevices) == 0 {
+            continue
+        }
 
         p := ConstructArtDmxPacket()
-        p.Length = byteswap(uint16(len(qi.frame)))
+        p.Length = byteswap(uint16(len(frame.Data)))
         b := new(bytes.Buffer)
         if err = binary.Write(b, binary.LittleEndian, p); err != nil {
             log.Fatal(err)
         }
-        buf := append(b.Bytes(), qi.frame...)
-        fmt.Print(hex.Dump(buf))
-        ArtnetDevices[qi.dev_id].Fd.Write(buf)
-        time.Sleep(qi.duration)
+        buf := append(b.Bytes(), frame.Data...)
+        // fmt.Print(hex.Dump(buf))
+
+        // Broadcast
+        for id := 0; id < len(ArtnetDevices); id++ {
+            ArtnetDevices[id].Fd.Write(buf)
+        }
+        // time.Sleep(frame.Duration)
     }
     return
 }

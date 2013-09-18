@@ -1,15 +1,14 @@
 package api
 
 import (
-    // "encoding/hex"
+    //"encoding/hex"
     "encoding/json"
     "io/ioutil"
     "log"
-    // "fmt"
+    //"fmt"
     //"strconv"
     "strings"
     "net/http"
-    "github.com/r3boot/inti/queue"
     "github.com/r3boot/inti/config"
 )
 
@@ -21,18 +20,7 @@ type Config struct {
 }
 var json_cfg Config
 
-type RgbValue struct {
-    P uint16
-    R uint8
-    G uint8
-    B uint8
-}
-
-type RenderData struct {
-    V []RgbValue
-    D int
-}
-
+var FrameQueue chan config.FrameData
 
 func logEntry (r *http.Request, caller string) {
     addr := strings.Split(r.RemoteAddr, ":")[0]
@@ -97,32 +85,6 @@ func ConfigHandler (w http.ResponseWriter, r *http.Request) {
     w.Write(buf)
 }
 
-func FrameHandler (w http.ResponseWriter, r *http.Request) {
-    logEntry(r, "FrameHandler")
-    var body []byte
-    var err error
-    if body, err = ioutil.ReadAll(r.Body); err != nil {
-        log.Print(err)
-        return
-    }
-    // log.Print(hex.Dump(body))
-    var data queue.FrameQueueItem
-    if err = json.Unmarshal(body, &data); err != nil {
-        log.Print(err)
-        return
-    }
-    var buf = make([]byte, len(data.Frame)+1)
-
-    for i := 0; i<len(data.Frame)-1; i++ {
-        
-        buf[i+1] = data.Frame[i]
-    }
-    data.Frame = buf
-    // log.Print(data.Frame)
-
-    FrameQueue <- data
-}
-
 func RenderHandler (w http.ResponseWriter, r *http.Request) {
     logEntry(r, "RenderHandler")
 
@@ -134,21 +96,11 @@ func RenderHandler (w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // fmt.Print(hex.Dump(body))
-
-    var d RenderData
-    if err = json.Unmarshal(body, &d); err != nil {
+    var data config.FrameData
+    if err = json.Unmarshal(body, &data); err != nil {
         log.Print(err)
         return
     }
 
-    log.Print(d)
-    /*
-    for i := 0; i < len(d.V); i++ {
-        cid, sid := dmx.PathToSid(d.V[i].P)
-        dmx.SetDmxRgbSpot(int(cid), int(sid), d.V[i].R, d.V[i].G, d.V[i].B)
-    }
-    dmx.RenderFrame(20)
-    */
-    
+    FrameQueue <- data
 }

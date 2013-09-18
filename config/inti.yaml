@@ -48,9 +48,19 @@ groups:
         - name: RGB spot #7
         - name: RGB spot #9
 
+controllers:
+    - name: Art-Net Controller
+      device: 00:30:56:f0:56:67
+      id: 1
+      channels: 30
+    - name: DMX Controller
+      device: /dev/dmx0
+      id: 31
+      channels: 30
+
 templates:
     - name: rgb_spot
-      description: 3 channel RGB PWM spot
+      description: 3 channel PWM spot
       channels:
           - name: Red
           - name: Green

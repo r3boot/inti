@@ -3,69 +3,55 @@ package dmx
 import (
     "log"
     "time"
-    "github.com/r3boot/inti/queue"
+    "github.com/r3boot/inti/config"
 )
 
-func SetDmxRgbSpot(cid int, sid int, r byte, g byte, b byte) {
-    Controllers[cid].Slots[sid].Red = r
-    Controllers[cid].Slots[sid].Green = g
-    Controllers[cid].Slots[sid].Blue = b
+var FrameQueue chan config.FrameData
 
-    return
-}
+func RenderFrame(duration int) (err error) {
 
-func GetDmxRgbSpot(cid int, sid int) (r byte, g byte, b byte) {
-    r = Controllers[cid].Slots[sid].Red
-    g = Controllers[cid].Slots[sid].Green
-    b = Controllers[cid].Slots[sid].Blue
-    return
-}
+    var frame = new(Frame)
+    frame.Data = make([]uint8, 512)
 
-func RenderFrame(duration time.Duration) (err error) {
-    var r, g, b byte = 0, 0, 0
+    frame.Duration = time.Duration(duration) * time.Millisecond
+    for fid := 0; fid < len(config.Fixtures); fid++ {
+        for cid := 0; cid < len(config.Fixtures[fid].Channels); cid++ {
+            offset := config.Fixtures[fid].Id
+            value := config.Fixtures[fid].Channels[cid].Value
 
-    for cid := 0; cid < NumControllers; cid++ {
-        device_offset := Controllers[cid].Id
-        frame_length := device_offset + (len(Controllers[cid].Slots) * 3)
-        var frame = make([]uint8, frame_length)
-
-        for sid := 0; sid < len(Controllers[cid].Slots); sid++ {
-            offset := device_offset + (Controllers[cid].Slots[sid].Slot * 3)
-            r, g, b = GetDmxRgbSpot(cid, sid)
-            frame[offset] = r
-            frame[offset+1] = g
-            frame[offset+2] = b
-        }
-
-        d_ms := duration * time.Millisecond
-        switch Controllers[cid].DeviceType {
-        default:
-            continue
-        case DMX_DEVICE:
-            DmxQueue <- &DmxQueueItem{Controllers[cid].DeviceId, frame, d_ms}
-        case ARTNET_DEVICE:
-            ArtnetQueue <- &ArtnetQueueItem{Controllers[cid].DeviceId, frame, d_ms}
+            frame.Data[offset+cid] = value
         }
     }
+
+    DmxQueue <- frame
+    ArtnetQueue <- frame
+    time.Sleep(frame.Duration)
+
+    /*
+    switch Controllers[cid].DeviceType {
+    default:
+        continue
+    case DMX_DEVICE:
+        DmxQueue <- &DmxQueueItem{Controllers[cid].DeviceId, frame, duration}
+    case ARTNET_DEVICE:
+        ArtnetQueue <- &ArtnetQueueItem{Controllers[cid].DeviceId, frame, duration}
+    }
+    */
 
     return
 }
 
 func FrameQueueRunner() {
-    var qi queue.FrameQueueItem
     log.Print("Starting Frame queue runner")
     for {
-        qi = <- FrameQueue
-        f := qi.Frame
-        for cid := 0; cid < NumControllers; cid++ {
+        d := <- FrameQueue
 
-            device_offset := Controllers[cid].Id
-            for sid := 0; sid < len(Controllers[cid].Slots); sid++ {
-                o := device_offset + (Controllers[cid].Slots[sid].Slot * 3)
-                SetDmxRgbSpot(cid, sid, f[o], f[o+1], f[o+2])
+        for fid := 0; fid < len(d.F); fid++ {
+            for cid := 0; cid < len(d.F[fid].C); cid++ {
+                config.Fixtures[fid].Channels[cid].Value = d.F[fid].C[cid]
             }
-
-            RenderFrame(qi.Duration)
         }
+
+        RenderFrame(d.D)
     }
 }

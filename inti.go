@@ -6,16 +6,15 @@ import (
     "github.com/r3boot/inti/api"
     "github.com/r3boot/inti/config"
     "github.com/r3boot/inti/dmx"
-    "github.com/r3boot/inti/queue"
 )
 
 var debug = flag.Bool("d", false, "Enable debugging")
 var cfg_file = flag.String("f", "/etc/inti.yaml", "Path to configuration file")
 var listen_addr = flag.String("l", "localhost:7231", "Host/port to listen on")
-var disable_dmx = flag.Bool("D", false, "Disable DMX discovery")
-var disable_artnet = flag.Bool("A", false, "Disable Art-Net discovery")
+var no_dmx = flag.Bool("D", false, "Disable DMX discovery")
+var no_artnet = flag.Bool("A", false, "Disable Art-Net discovery")
 
-var frameQueue = make(chan queue.FrameQueueItem, 512)
+var frameQueue = make(chan config.FrameData, 512)
 
 func init() {
     var err error
@@ -23,10 +22,7 @@ func init() {
     flag.Parse()
 
     if err = config.Setup(*cfg_file); err != nil { log.Fatal(err) }
-
-    if ! *disable_dmx { dmx.DoDmxDiscovery() }
-    if ! *disable_artnet { dmx.DoArtnetDiscovery() }
-
+    if err = dmx.Setup(*no_dmx, *no_artnet); err != nil { log.Fatal(err) }
     if err = api.Setup(*listen_addr); err != nil { log.Fatal(err) }
 
     dmx.FrameQueue = frameQueue
@@ -34,8 +30,8 @@ func init() {
 }
 
 func main() {
-    if ! *disable_dmx { go dmx.UsbQueueRunner() }
-    if ! *disable_artnet { go dmx.ArtnetQueueRunner() }
+   if ! *no_dmx { go dmx.UsbQueueRunner() }
+   if ! *no_artnet { go dmx.ArtnetQueueRunner() }
 
     go dmx.FrameQueueRunner()
 

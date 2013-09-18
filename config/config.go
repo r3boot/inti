@@ -8,47 +8,16 @@ import (
 
 var cfgFile yaml.File
 
-type Channel struct {
-    Name string
-    Value uint8
-    Feature uint8
-}
-
-type FixtureTemplate struct {
-    Name string
-    Description string
-    Channels []Channel
-}
-var FixtureTemplates []FixtureTemplate
-
-type Fixture struct {
-    Name string
-    Id int
-    Channels []Channel
-}
-var Fixtures []Fixture
-
-type Group struct {
-    Name string
-    Description string
-    Fixtures []*Fixture
-}
-var Groups []Group
-
-type GroupMember struct {
-    Fixture *Fixture
-    Groups []*Group
-}
-var GroupMembership []GroupMember
-
 func Setup (file_name string) (err error) {
     if err = ReadConfigFile(file_name); err != nil { return }
     if err = LoadFixtureTemplates(); err != nil { return }
     if err = LoadFixtures(); err != nil { return }
+    if err = LoadControllers(); err != nil { return }
     if err = LoadGroups(); err != nil { return }
 
     log.Print("Loaded "+strconv.Itoa(len(FixtureTemplates))+" fixture template(s)")
     log.Print("Loaded "+strconv.Itoa(len(Fixtures))+" fixture(s)")
+    log.Print("Loaded "+strconv.Itoa(len(Controllers))+" controller(s)")
     log.Print("Loaded "+strconv.Itoa(len(Groups)-1)+" group(s)")
     return
 }
@@ -180,6 +149,25 @@ func LoadGroups () (err error) {
         }
 
         Groups = append(Groups, *group)
+    }
+
+    return
+}
+func LoadControllers () (err error) {
+    for cid := 0; cid < MAX_CONTROLLERS; cid++ {
+        base := "controllers["+strconv.Itoa(cid)+"]."
+        if _, err = cfgFile.Get(base + "name"); err != nil {
+            err = nil
+            break
+        }
+
+        var controller = new(Controller)
+        setStr(&controller.Name, base + "name")
+        setStr(&controller.Device, base + "device")
+        setInt(&controller.Id, base + "id")
+        setInt(&controller.Channels, base + "channels")
+
+        Controllers = append(Controllers, *controller)
     }
 
     return

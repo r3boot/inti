@@ -1,5 +1,5 @@
 var groups = []
-var controllers = []
+var fixtures = []
 var current_target
 var cw
 
@@ -26,7 +26,7 @@ function store_set(k, v) {
 
 function reset_store() {
     console.log('resetting LocalStorage')
-    store_set('spots', {})
+    store_set('fixtures', {})
     store_set('groups', {})
     store_set('current_target', null)
 }
@@ -41,13 +41,13 @@ function load_configuration(cw) {
         url: '/config',
         type: 'get',
         success: function(response) {
-            controllers = response['Controllers']
-            load_controllers(response['Controllers'])
+            fixtures = response['Fixtures']
+            load_fixtures(response['Fixtures'])
 
             groups = response['Groups']
             load_groups(response['Groups'])
 
-            setup_target_menu(response['Controllers'], response['Groups'], cw)
+            setup_target_menu(response['Fixtures'], response['Groups'], cw)
 
         },
         error: function(xhr, textStatus, errorThrown) {
@@ -56,32 +56,30 @@ function load_configuration(cw) {
     })
 }
 
-function load_controllers(controllers) {
-    var content = '<h4>Available Controllers</h4>'
+function load_fixtures(fixtures) {
+    var content = '<h4>Available Fixtures</h4>'
 
-    for (cid=0; cid < controllers.length; cid++) {
+    for (fid=0; fid < fixtures.length; fid++) {
         content += '<div class="row">'
         content += '<div class="span4">'
-        content += 'Name: '+controllers[cid].Name+'<br/>'
-        content += 'Description: '+controllers[cid].Description+'<br/>'
+        content += 'Name: '+fixtures[fid].Name+'<br/>'
+        content += 'Id: '+fixtures[fid].Id+'<br/>'
         content += '</div>'
 
         content += '<div class="span8">'
-        for (var sid=0; sid < controllers[cid].Spots.length; sid++) {
-            var spot_info = controllers[cid].Spots[sid]
-            var color = rgb_to_hex(spot_info['R'],spot_info['G'],spot_info['B'])
+        for (var cid=0; cid < fixtures[fid].Channels.length; cid++) {
+            var ch = fixtures[cid].Channels[cid]
+
             content += '<div class="row">'
-            content += '<div class="span2">'+spot_info['Name']+'</div>'
-            content += '<div class="span3">'+spot_info['Description']+'</div>'
-            content += '<div class="span1">'+spot_info['Path']+'</div>'
-            content += '<div class="span1" style="background-color:'+color+'">'+color+'</div>'
+            content += '<div class="span2">'+ch['Name']+'</div>'
+            content += '<div class="span1">'+ch['Value']+'</div>'
             content += '</div>'
         }
         content += '</div>'
         content += '</div>'
     }
 
-    $('#available_spots').html(content)
+    $('#available_fixtures').html(content)
 }
 
 function load_groups(groups) {
@@ -95,8 +93,8 @@ function load_groups(groups) {
         content += '</div>'
 
         content += '<div class="span8">'
-        for (var sid=0; sid < groups[gid].Spots.length; sid++) {
-            var spot_info = groups[gid].Spots[sid]
+        for (var sid=0; sid < groups[gid].Fixtures.length; sid++) {
+            var spot_info = groups[gid].Fixtures[sid]
             var color = rgb_to_hex(spot_info['R'],spot_info['G'],spot_info['B'])
             content += '<div class="row">'
             content += '<div class="span2">'+spot_info['Name']+'</div>'
@@ -112,7 +110,7 @@ function load_groups(groups) {
     $('#available_groups').html(content)
 }
 
-function setup_target_menu(controllers, groups) {
+function setup_target_menu(fixtures, groups) {
     var content = '<ul class="nav nav-list well">'
     content += '<li class="nav-header">Select target</li>'
     content += '<ul class="nav nav-list">'
@@ -122,10 +120,10 @@ function setup_target_menu(controllers, groups) {
     }
     content += '</ul>'
     content += '<ul class="nav nav-list">'
-    content += '<li class="nav-header">By controller</li>'
+    content += '<li class="nav-header">By fixture</li>'
 
-    for (cid = 0; cid < controllers.length; cid++) {
-        content += '<li id="m_controller_'+cid+'"><a href="#">'+controllers[cid].Name+'</a></li>'
+    for (cid = 0; cid < fixtures.length; cid++) {
+        content += '<li id="m_fixture_'+cid+'"><a href="#">'+fixtures[cid].Name+'</a></li>'
     }
     content += '</ul>'
     content += '</ul>'
@@ -140,15 +138,14 @@ function setup_target_menu(controllers, groups) {
         })
     }
 
-    for (cid = 0; cid < controllers.length; cid++) {
-        $('#m_controller_'+cid).click(function(e) {
+    for (cid = 0; cid < fixtures.length; cid++) {
+        $('#m_fixture_'+cid).click(function(e) {
             $('#'+current_target).removeClass('active')
             $(this).addClass('active')
             current_target = this.id
         })
     }
 
-    console.log(rgb_to_hex())
 }
 
 function setup_colorwheel(cw) {
@@ -173,21 +170,23 @@ function setup_colorwheel(cw) {
             id = parseInt(current_target.replace('m_group_', ''))
             target = groups[id]
         } else {
-            id = parseInt(current_target.replace('m_controller_', ''))
-            target = controllers[id]
+            id = parseInt(current_target.replace('m_fixture_', ''))
+            target = fixtures[id]
         }
 
         var render_data = {}
-        render_data['V'] = []
         render_data['D'] = 20
-        for (sid = 0; sid < target.Spots.length; sid++) {
-            spot = {
-                "P": target.Spots[sid].Path,
-                "R": parseInt(color.r),
-                "G": parseInt(color.g),
-                "B": parseInt(color.b),
+        render_data['F'] = []
+        for (sid = 0; sid < target.Fixtures.length; sid++) {
+            fixture = {
+                "I": target.Fixtures[sid].Id,
+                "C": [
+                    parseInt(color.r),
+                    parseInt(color.g),
+                    parseInt(color.b),
+                ]
             }
-            render_data['V'].push(spot)
+            render_data['F'].push(fixture)
         }
         console.log(render_data)
 

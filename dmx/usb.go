@@ -25,7 +25,7 @@ type DmxQueueItem struct {
     frame []byte
     duration time.Duration
 }
-var DmxQueue = make(chan *DmxQueueItem, 255)
+var DmxQueue = make(chan *Frame, 1024)
 
 func DoDmxDiscovery() {
     for id := 0; id < MAX_DEVICES; id++ {
@@ -65,10 +65,19 @@ func GetUsbDeviceId(name string) (id int, err error) {
 func UsbQueueRunner() (err error) {
     log.Print("Starting DMX queue runner")
     for {
-        qi := <- DmxQueue
+        frame := <- DmxQueue
 
-        UsbDevices[qi.dev_id].Fd.Write(qi.frame)
-        time.Sleep(qi.duration)
+        if ! EnableDmx {
+            continue
+        } else if len(UsbDevices) == 0 {
+            continue
+        }
+
+        // Broadcast
+        for id := 0; id < len(UsbDevices); id++ {
+            UsbDevices[id].Fd.Write(frame.Data)
+        }
+        // time.Sleep(frame.Duration)
     }
     return
 }
