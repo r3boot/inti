@@ -68,7 +68,7 @@ class Fixture:
             value = 255
 
         addr = self.address + self.channels[channel]
-        self.bus.buffer[addr] = value
+        self.bus['buffer'][addr] = value
 
     def __repr__(self):
         """Helper function which returns the name of the fixture
@@ -93,3 +93,9 @@ class NurdNode(Fixture):
 
     def __init__(self, bus, address, name):
         Fixture.__init__(self, bus, address, name)
+        self[RED] = 128
+        self[GREEN] = 128
+        self[BLUE] = 128
+        self[PAN] = 128
+        self[TILT] = 128
+        self[PROG] = 0

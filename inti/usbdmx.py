@@ -98,11 +98,11 @@ class UsbDmxDevice:
         cfg['fixtures'] = fixtures
         return cfg
 
-    def transfer(self):
+    def transfer(self, buffer):
         """Transfer the contents of the DMX buffer to the DMX bus, thereby
         setting all devices to the values represented by the buffer.
         """
-        packet = [0x00] + self._cfg['buffer']
+        packet = [0x00] + buffer
 
         # Perform DMX synchronization at 19200 baud
         bus = serial.Serial(self._cfg['port'], BAUD_SYNC)

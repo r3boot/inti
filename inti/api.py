@@ -42,6 +42,7 @@ class RestAPI:
         self._app.route('/css/<file>', method='get', callback=self.serve_css)
         self._app.route('/js/<file>', method='get', callback=self.serve_js)
         self._app.route('/v1/config', method='get', callback=self.serve_config)
+        self._app.route('/v1/buffer', method='post', callback=self.set_buffer)
 
     def run(self):
         """Start the actual API
@@ -77,8 +78,10 @@ class RestAPI:
         """Returns the configuration served by this api
         """
         cfg = {}
+        i = 0
         for name, bus in self._dmx.items():
             cfg[name] = {
+                'id': i,
                 'name': bus['name'],
                 'port': bus['port'],
                 'buffer': bus['buffer'],
@@ -91,4 +94,17 @@ class RestAPI:
                     'channels': bus['fixtures'][f_name].channels,
                 }
                 cfg[name]['fixtures'][f_name] = fixture
+            i += 1
         return json.dumps(cfg)
+
+    def set_buffer(self):
+        """Dumps a buffer onto a DMX Bus
+        """
+        raw_data = bottle.request.body.read().decode('utf-8')
+        bus_cfg = json.loads(raw_data)
+        print(bus_cfg['name'])
+
+        bus = self._dmx[bus_cfg['port']]
+        if not bus:
+            return bottle.HTTPResponse(status=404)
+        bus.transfer(bus_cfg['buffer'])

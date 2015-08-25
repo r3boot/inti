@@ -19,21 +19,110 @@ function get_json(url) {
 }
 
 
+function get_fixture_byaddr(bus_id, address) {
+    var bus_name, bus, f_name, fixture = null;
+
+    for (bus_name in dmx_config) {
+        if (dmx_config.hasOwnProperty(bus_name)) {
+            bus = dmx_config[bus_name];
+            if (bus.id === bus_id) {
+                for (f_name in bus.fixtures) {
+                    if (bus.fixtures.hasOwnProperty(f_name)) {
+                        fixture = bus.fixtures[f_name];
+                        if (fixture.address === address) {
+                            return fixture;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return;
+}
+
+
+function transfer_buffer(data) {
+    $.ajax({
+        url: '/v1/buffer',
+        type: 'POST',
+        data: JSON.stringify(data),
+        dataType: 'json',
+    });
+}
+
+
 function set_fixture_color(color) {
-    console.log("Setting fixture color");
-    console.log(color);
+    var bus_name, bus, f_selector, tokens, f_addr = null;
+    var fixture, red_offset, green_offset, blue_offset, address = null;
+
+    for (bus_name in dmx_config) {
+        if (dmx_config.hasOwnProperty(bus_name)) {
+            bus = dmx_config[bus_name];
+            f_selector = 'f_bus-' + bus.id;
+            $('#'+f_selector+' :selected').each(function(i, selected) {
+                tokens = selected.value.split('-');
+                f_addr = parseInt(tokens[tokens.length - 1]);
+                fixture = get_fixture_byaddr(bus.id, f_addr);
+                red_offset = fixture.channels.red;
+                green_offset = fixture.channels.green;
+                blue_offset = fixture.channels.blue;
+
+                bus.buffer[f_addr + red_offset] = parseInt(color.r);
+                bus.buffer[f_addr + green_offset] = parseInt(color.g);
+                bus.buffer[f_addr + blue_offset] = parseInt(color.b);
+            });
+
+            transfer_buffer(bus);
+        }
+    }
 }
 
 
 function set_fixture_pan(value) {
-    console.log("Setting fixture pan");
-    console.log(value);
+    var bus_name, bus, f_selector, tokens, f_addr = null;
+    var fixture, pan_offset, address = null;
+
+    for (bus_name in dmx_config) {
+        if (dmx_config.hasOwnProperty(bus_name)) {
+            bus = dmx_config[bus_name];
+            f_selector = 'f_bus-' + bus.id;
+            $('#'+f_selector+' :selected').each(function(i, selected) {
+                tokens = selected.value.split('-');
+                f_addr = parseInt(tokens[tokens.length - 1]);
+                fixture = get_fixture_byaddr(bus.id, f_addr);
+                pan_offset = fixture.channels.pan;
+                address = f_addr + pan_offset;
+                bus.buffer[address] = value;
+            });
+
+            transfer_buffer(bus);
+        }
+    }
+
 }
 
 
 function set_fixture_tilt(value) {
-    console.log("Setting fixture tilt");
-    console.log(value);
+    var bus_name, bus, f_selector, tokens, f_addr = null;
+    var fixture, pan_offset, address = null;
+
+    for (bus_name in dmx_config) {
+        if (dmx_config.hasOwnProperty(bus_name)) {
+            bus = dmx_config[bus_name];
+            f_selector = 'f_bus-' + bus.id;
+            $('#'+f_selector+' :selected').each(function(i, selected) {
+                tokens = selected.value.split('-');
+                f_addr = parseInt(tokens[tokens.length - 1]);
+                fixture = get_fixture_byaddr(bus.id, f_addr);
+                pan_offset = fixture.channels.tilt;
+                address = f_addr + pan_offset;
+                bus.buffer[address] = value;
+            });
+
+            transfer_buffer(bus);
+        }
+    }
 }
 
 
@@ -67,6 +156,7 @@ function setup_pantilt_sliders() {
         }
     });
     $('#pan').on('slide', function(e) {
+        e.preventDefault();
         set_fixture_pan(e.value);
     });
 
@@ -89,7 +179,7 @@ function setup_pantilt_sliders() {
 function render_direct() {
     /* Function which returns a rendered view of the direct page
      */
-    var content, bus_name, bus, f_name, fixture = null;
+    var content, bus_name, bus, f_name, fixture, opt_name = null;
 
     content = '<div class="row">';
 
@@ -100,10 +190,12 @@ function render_direct() {
             bus = dmx_config[bus_name];
             content += '<h4>' + bus.name + '</h4>';
 
-            content += '<select multiple class="form-control">';
+            content += '<select multiple id="f_bus-' + bus.id + '" class="form-control">';
             for (f_name in dmx_config[bus_name].fixtures) {
+                fixture = dmx_config[bus_name].fixtures[f_name];
+                opt_name = 'f_bus-' + bus.id+ '-' + fixture.address;
                 if (dmx_config[bus_name].fixtures.hasOwnProperty(f_name)) {
-                    content += '<option value="'+ f_name + '">' + f_name + '</option>';
+                    content += '<option value="'+ opt_name + '">' + f_name + '</option>';
                 }
             }
             content += '</select>';
@@ -116,12 +208,12 @@ function render_direct() {
     content += '<div id="color_wheel" style="float:left; margin-right:20px; width:300px; text-align:left;"></div>';
     content += '</div>';
     content += '<div class="col-md-1" style="padding-top:50px; padding-left:0px;">';
-    content += '<input id="tilt" data-slider-id="tilt_slider" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="128" data-slider-orientation="vertical"/>';
+    content += '<input id="tilt" data-slider-id="tilt_slider" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="4" data-slider-value="128" data-slider-orientation="vertical"/>';
     content += '</div>';
 
     content += '<div class="row">';
     content += '<div class="col-md-4 col-md-offset-3" style="padding-left:60px; padding-top:20px">';
-    content += '<input id="pan" data-slider-id="pan_slider" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="128"/>';
+    content += '<input id="pan" data-slider-id="pan_slider" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="4" data-slider-value="128"/>';
     content += '</div>';
 
     content += '</div>';

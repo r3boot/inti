@@ -61,11 +61,6 @@ def main():
     cfg = config.Config(logger, args.cfg)
     dmx = busses.Busses(logger, cfg)
 
-    # Initialize bus to some default value
-    for bus_name in dmx.keys():
-        dmx[bus_name]['buffer'] = [128] * usbdmx.MAX_CHANNELS
-        dmx[bus_name].transfer()
-
     # Configure and start the API
     service = api.RestAPI(logger, args.host, args.port, dmx)
     service.run()
