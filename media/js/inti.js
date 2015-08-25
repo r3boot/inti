@@ -2,15 +2,50 @@
 /*global $, jQuery, alert*/
 "use strict";
 
+var dmx_config = new Array();
+
+
+function get_json(url) {
+    return JSON.parse($.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        global: false,
+        async: false,
+        success: function(data) {
+            return data;
+        }
+    }).responseText);
+}
+
+
 /* Various functions used to render pages
  */
 
 function render_direct() {
     /* Function which returns a rendered view of the direct page
      */
-    var content = null;
+    var content, bus_name, bus, f_name, fixture = null;
 
-    content = 'view_direct';
+    content = '<div class="row">';
+    content += '<div class="col-md-3">';
+    for (bus_name in dmx_config) {
+        if (dmx_config.hasOwnProperty(bus_name)) {
+            bus = dmx_config[bus_name];
+            content += '<h4>' + bus.name + '</h4>';
+
+            content += '<select multiple class="form-control">';
+            for (f_name in dmx_config[bus_name].fixtures) {
+                if (dmx_config[bus_name].fixtures.hasOwnProperty(f_name)) {
+                    content += '<option value="'+ f_name + '">' + f_name + '</option>';
+                }
+            }
+            content += '</select>';
+        }
+    }
+    content += '</div>';
+    content += '</div>';
+
     return content;
 }
 
@@ -61,23 +96,15 @@ function setup_main_eventhandlers() {
     });
 }
 
+
 function main() {
     /* Main program to run
      */
+
     $(document).ready(function() {
-        $.ajax({
-            url: '/v1/config',
-            type: 'get',
-            success: function(r) {
-                console.log(r);
-                setup_main_eventhandlers();
-                view_direct();
-            },
-            error: function(xhr, textStatus, errorThrown) {
-                console.log('Failed to load configuration: ' + xhr + ', ' + textStatus + ', ' + errorThrown);
-                $('#content').html("Failed to load configuration");
-            },
-        });
+        dmx_config = get_json('/v1/config');
+        setup_main_eventhandlers();
+        view_direct();
     });
 }
 

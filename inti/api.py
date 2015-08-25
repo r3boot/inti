@@ -79,17 +79,16 @@ class RestAPI:
         cfg = {}
         for name, bus in self._dmx.items():
             cfg[name] = {
+                'name': bus['name'],
                 'port': bus['port'],
                 'buffer': bus['buffer'],
                 'fixtures': {}
             }
             for f_name in bus['fixtures'].keys():
-                print(bus['fixtures'][f_name].address)
                 fixture = {
                     'bus': name,
                     'address': bus['fixtures'][f_name].address,
                     'channels': bus['fixtures'][f_name].channels,
                 }
                 cfg[name]['fixtures'][f_name] = fixture
-        print(cfg)
         return json.dumps(cfg)
