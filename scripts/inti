@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+"""
+.. module:: __main__
+   :platform: Linux
+   :synopsis: Inti DMX api
+
+.. moduleauthor:: Lex van Roon <r3boot@r3blog.nl>
+"""
+
+import argparse
+import logging
+import sys
+
+sys.path.append('.')
+
+from inti import config
+from inti import busses
+
+__description__ = 'Inti DMX controller -- API'
+
+D_DEBUG = False
+D_CFG = '/etc/inti.yml'
+D_HOST = 'localhost'
+D_PORT = 7231
+
+
+def main():
+    """Main program.
+
+    Parse all CLI arguments, read the configuration file, setup all DMX devices
+    + fixtures and start the API.
+    """
+    parser = argparse.ArgumentParser(description=__description__)
+    parser.add_argument('-D', dest='debug', action='store_true',
+                        default=D_DEBUG, help='Enable debugging')
+    parser.add_argument('-f', dest='cfg', action='store', type=str,
+                        default=D_CFG, help='Configuration to use')
+    parser.add_argument('-l', dest='host', action='store', type=str,
+                        default=D_HOST, help='Ip address to listen on')
+    parser.add_argument('-p', dest='port', action='store', type=int,
+                        default=D_PORT, help='Port to listen on')
+
+    args = parser.parse_args()
+
+    logger = logging.getLogger('main')
+    if args.debug:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+    logger.setLevel(log_level)
+
+    console_logger = logging.StreamHandler()
+    console_logger.setLevel(log_level)
+    formatter = logging.Formatter('%(asctime)s [%(levelname)s]: %(message)s')
+    console_logger.setFormatter(formatter)
+    logger.addHandler(console_logger)
+
+    cfg = config.Config(logger, args.cfg)
+    dmx = busses.Busses(logger, cfg)
+
+    print('usbdmx' in cfg)
+    print('/dev/ttyUSB0' in dmx)
+
+    return
+
+if __name__ == '__main__':
+    sys.exit(main())
