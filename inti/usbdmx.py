@@ -29,12 +29,13 @@ class UsbDmxDevice:
     :type  name:    str
     """
     _cfg = {}
+
     def __init__(self, port, name):
         self._cfg = {
             'port': port,                   # Port to use
             'name': name,                   # Descriptive name for this bus
-            'buffer': [0] * MAX_CHANNELS,   # Buffer representing the DMX bus
-            'fixtures': {},
+            'buffer': [0] * MAX_CHANNELS,   # Buffer representing this bus
+            'fixtures': {},                 # Fixtures attached to this bus
         }
 
     def __getitem__(self, key):
@@ -101,14 +102,14 @@ class UsbDmxDevice:
         """Transfer the contents of the DMX buffer to the DMX bus, thereby
         setting all devices to the values represented by the buffer.
         """
-        packet = 0x00 + self.buffer
+        packet = [0x00] + self._cfg['buffer']
 
         # Perform DMX synchronization at 19200 baud
-        bus = serial.Serial(self.port, BAUD_SYNC)
-        bus.write(0x00)
+        bus = serial.Serial(self._cfg['port'], BAUD_SYNC)
+        bus.write([0x00])
         bus.close()
 
         # Blast the buffer onto the DMX Bus at 250000 baud
-        bus = serial.Serial(self.port, BAUD_SEND)
+        bus = serial.Serial(self._cfg['port'], BAUD_SEND)
         bus.write(packet)
         bus.close()

@@ -15,6 +15,8 @@ sys.path.append('.')
 
 from inti import config
 from inti import busses
+from inti import usbdmx
+from inti import api
 
 __description__ = 'Inti DMX controller -- API'
 
@@ -58,7 +60,14 @@ def main():
     cfg = config.Config(logger, args.cfg)
     dmx = busses.Busses(logger, cfg)
 
-    print(dmx.asdict())
+    # Initialize bus to some default value
+    for bus_name in dmx.keys():
+        dmx[bus_name]['buffer'] = [128] * usbdmx.MAX_CHANNELS
+        dmx[bus_name].transfer()
+
+    # Configure and start the API
+    service = api.RestAPI(logger, args.host, args.port)
+    service.run()
 
     return
 

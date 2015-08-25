@@ -51,9 +51,15 @@ class Busses:
         """
         return port in self._busses
 
+    def keys(self):
+        """Helper function which returns an interable which loops over all
+        busses in the system, returning the key name
+        """
+        return self._busses.keys()
+
     def items(self):
         """Helper function which returns an iterable which loops over all
-        busses in the system
+        busses in the system, returning both the key and the value
         """
         return self._busses.items()
 
