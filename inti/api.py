@@ -1,3 +1,11 @@
+"""
+.. module: api
+   :platform: Linux
+   :synopsis: Provides a restful api for the Inti DMX controller
+
+.. moduleauthor: Lex van Roon <r3boot@r3blog.nl>
+"""
+import json
 import socket
 import sys
 
@@ -23,15 +31,17 @@ class RestAPI:
     :param port:    Port to listen on
     :type  port:    int
     """
-    def __init__(self, logger, host, port):
+    def __init__(self, logger, host, port, busses):
         self.log = logger
         self._host = host
         self._port = port
+        self._dmx = busses
 
         self._app = bottle.Bottle()
         self._app.route('/', method='get', callback=self.serve_index)
         self._app.route('/css/<file>', method='get', callback=self.serve_css)
         self._app.route('/js/<file>', method='get', callback=self.serve_js)
+        self._app.route('/v1/config', method='get', callback=self.serve_config)
 
     def run(self):
         """Start the actual API
@@ -62,3 +72,9 @@ class RestAPI:
         path = MEDIA + '/js'
         mime = 'application/javascript'
         return bottle.static_file(file, root=path, mimetype=mime)
+
+    def serve_config(self):
+        """Returns the configuration served by this api
+        """
+        data = self._dmx.asdict()
+        return json.dumps(data)

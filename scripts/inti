@@ -9,6 +9,7 @@
 
 import argparse
 import logging
+import json
 import sys
 
 sys.path.append('.')
@@ -66,7 +67,7 @@ def main():
         dmx[bus_name].transfer()
 
     # Configure and start the API
-    service = api.RestAPI(logger, args.host, args.port)
+    service = api.RestAPI(logger, args.host, args.port, dmx)
     service.run()
 
     return

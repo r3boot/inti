@@ -94,7 +94,7 @@ class UsbDmxDevice:
         cfg = self._cfg
         fixtures = {}
         for k,v in cfg['fixtures'].items():
-            fixtures[k] = v.asdict()
+            fixtures[k] = cfg['fixtures'][k].asdict()
         cfg['fixtures'] = fixtures
         return cfg
 

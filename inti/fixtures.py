@@ -70,10 +70,10 @@ class Fixture:
         addr = self._cfg['address'] + self._cfg['channels'][channel]
         self._cfg['bus'].buffer[addr] = value
 
-    def __repr__(self):
+    #def __repr__(self):
         """Helper function which returns the name of the fixture
         """
-        return self._cfg['name']
+    #    return self._cfg['name']
 
     def asdict(self):
         """Helper function which returns this fixture as a dictionary
@@ -81,6 +81,8 @@ class Fixture:
         :returns:   Dictionary containing the configuration of this fixture
         :rtype:     dict
         """
+        cfg = self._cfg
+        cfg['bus'] = self._cfg['bus']['name']
         return self._cfg
 
 
