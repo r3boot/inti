@@ -6,3 +6,16 @@ body {
 .navbar {
   margin-bottom: 20px;
 }
+
+.center {
+    float: none;
+    margin: 0 auto;
+}
+
+#pan_slider .slider-selection {
+    background: #BABABA;
+}
+
+#tilt_slider .slider-selection {
+    background: #BABABA;
+}

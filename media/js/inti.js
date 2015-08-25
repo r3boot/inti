@@ -2,8 +2,8 @@
 /*global $, jQuery, alert*/
 "use strict";
 
-var dmx_config = new Array();
-
+var dmx_config = [];
+var color_wheel = null;
 
 function get_json(url) {
     return JSON.parse($.ajax({
@@ -19,6 +19,70 @@ function get_json(url) {
 }
 
 
+function set_fixture_color(color) {
+    console.log("Setting fixture color");
+    console.log(color);
+}
+
+
+function set_fixture_pan(value) {
+    console.log("Setting fixture pan");
+    console.log(value);
+}
+
+
+function set_fixture_tilt(value) {
+    console.log("Setting fixture tilt");
+    console.log(value);
+}
+
+
+function setup_colorwheel() {
+    color_wheel = Raphael.colorwheel($("#color_wheel"), 300, 180);
+
+    var onchange_label = $(".cw_onchange");
+    var ondrag_label = $(".cw_ondrag");
+    color_wheel.color("#F00");
+
+    color_wheel.ondrag(
+        function() {
+            ondrag_label.show();
+        },
+        function() {
+            ondrag_label.hide();
+        }
+    );
+
+    color_wheel.onchange(function(color) {
+        set_fixture_color(color);
+    });
+}
+
+
+function setup_pantilt_sliders() {
+    $('#pan').slider({
+        height: 300,
+        formatter: function(value) {
+            return 'Current value: ' + value;
+        }
+    });
+    $('#pan').on('slide', function(e) {
+        set_fixture_pan(e.value);
+    });
+
+
+    $('#tilt').slider({
+        height: 300,
+        formatter: function(value) {
+            return 'Current value: ' + value;
+        }
+    });
+    $('#tilt').on('slide', function(e) {
+        set_fixture_tilt(e.value);
+    });
+}
+
+
 /* Various functions used to render pages
  */
 
@@ -28,6 +92,8 @@ function render_direct() {
     var content, bus_name, bus, f_name, fixture = null;
 
     content = '<div class="row">';
+
+    // Column containing bus/fixture selection widgets
     content += '<div class="col-md-3">';
     for (bus_name in dmx_config) {
         if (dmx_config.hasOwnProperty(bus_name)) {
@@ -44,6 +110,20 @@ function render_direct() {
         }
     }
     content += '</div>';
+
+    // Column containing the fixture controls
+    content += '<div class="col-md-4">';
+    content += '<div id="color_wheel" style="float:left; margin-right:20px; width:300px; text-align:left;"></div>';
+    content += '</div>';
+    content += '<div class="col-md-1" style="padding-top:50px; padding-left:0px;">';
+    content += '<input id="tilt" data-slider-id="tilt_slider" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="128" data-slider-orientation="vertical"/>';
+    content += '</div>';
+
+    content += '<div class="row">';
+    content += '<div class="col-md-4 col-md-offset-3" style="padding-left:60px; padding-top:20px">';
+    content += '<input id="pan" data-slider-id="pan_slider" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="128"/>';
+    content += '</div>';
+
     content += '</div>';
 
     return content;
@@ -69,6 +149,8 @@ function view_direct() {
     
     content = render_direct();
     $('#content').html(content);
+    setup_colorwheel();
+    setup_pantilt_sliders();
 }
 
 
