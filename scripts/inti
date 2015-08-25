@@ -58,8 +58,7 @@ def main():
     cfg = config.Config(logger, args.cfg)
     dmx = busses.Busses(logger, cfg)
 
-    print('usbdmx' in cfg)
-    print('/dev/ttyUSB0' in dmx)
+    print(dmx.asdict())
 
     return
 

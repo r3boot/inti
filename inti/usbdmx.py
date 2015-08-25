@@ -28,11 +28,74 @@ class UsbDmxDevice:
     :param name:    Descriptive name for the USB-to-DMX device
     :type  name:    str
     """
+    _cfg = {}
     def __init__(self, port, name):
-        self.port = port                    # Port to use
-        self.name = name
-        self.buffer = [0] * MAX_CHANNELS    # Buffer representing the DMX bus
-        self.fixtures = {}
+        self._cfg = {
+            'port': port,                   # Port to use
+            'name': name,                   # Descriptive name for this bus
+            'buffer': [0] * MAX_CHANNELS,   # Buffer representing the DMX bus
+            'fixtures': {},
+        }
+
+    def __getitem__(self, key):
+        """Helper function to return the current value for a key
+        in the local configuration dictionary
+
+        :param key:     Key to lookup
+        :type  key:     str
+        :returns:       Value of the configuration pointed to by key or None
+        :rtype:         obj or None
+        """
+        try:
+            return self._cfg[key]
+        except KeyError:
+            return None
+
+    def __setitem__(self, key, value):
+        """Helper function to set a value for a key in the local
+        configuration dictionary
+
+        :param key:     Key to configure
+        :type  key:     str
+        :param value:   New value for this key
+        :type  value:   obj
+        """
+        if key not in self._cfg:
+            return
+        self._cfg[key] = value
+
+    def __contains__(self, key):
+        """Helper function to check if a value is present in the local
+        configuration dictionary
+
+        :param key:     Key to lookup
+        :type  key:     str
+        :returns:       Flag indicating existence of the key
+        :rtype:         bool
+        """
+        return key in self._cfg
+
+    def __repr__(self):
+        """Helper function which returns a textual representation of this bus
+
+        :returns:   Name of this bus
+        :rtype:     str
+        """
+        return self._cfg['name']
+
+    def asdict(self):
+        """Helper function which returns the local configuration dictionary
+        for this bus
+
+        :returns:   Dictionary representing the configuration for this bus
+        :rtype:     dict
+        """
+        cfg = self._cfg
+        fixtures = {}
+        for k,v in cfg['fixtures'].items():
+            fixtures[k] = v.asdict()
+        cfg['fixtures'] = fixtures
+        return cfg
 
     def transfer(self):
         """Transfer the contents of the DMX buffer to the DMX bus, thereby

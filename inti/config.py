@@ -89,3 +89,15 @@ class Config:
         if self.validate_config(cfg):
             self._cfg = cfg
         return True
+
+    def get_usbdmx_byport(self, port):
+        """Helper function to lookup a Usb-to-Dmx device by port name
+
+        :param port:    Name of the port
+        :type  port:    str
+        :returns:       Configuration for the port or None
+        :rtype:         dict or None
+        """
+        for usbdmx in self._cfg['usbdmx']:
+            if usbdmx['device'] == port:
+                return usbdmx

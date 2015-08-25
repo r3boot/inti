@@ -51,6 +51,22 @@ class Busses:
         """
         return port in self._busses
 
+    def items(self):
+        """Helper function which returns an iterable which loops over all
+        busses in the system
+        """
+        return self._busses.items()
+
+    def asdict(self):
+        """Helper function which returns the configuration of this bus
+        """
+        busses = {}
+        for bus in self._busses:
+            name = self._busses[bus]['name']
+            data = self._busses[bus].asdict()
+            busses[name] = data
+        return busses
+
     def discover_usbdmx_devices(self):
         """Probe all available local Usb-to-Dmx devices, up to a maximum
         of MAX_USBDMX_BUSSES controllers. All discovered controllers will be
@@ -62,17 +78,18 @@ class Busses:
                 break
 
             # Check if the device is configured
-            if device_name not in self.cfg:
+            port_cfg = self.cfg.get_usbdmx_byport(device_name)
+            if not port_cfg:
                 self.log.warning('"{0}" is not configured'.format(device_name))
                 continue
 
             # Found a device, configure it
-            name = self.cfg[device_name]['name']
+            name = port_cfg['name']
             device = usbdmx.UsbDmxDevice(device_name, name)
             self._busses[device_name] = device
 
             # Now add all fixtures attached to this device
-            for f_cfg in self.cfg[device_name]['fixtures']:
+            for f_cfg in port_cfg['fixtures']:
                 if f_cfg['template'] == 'NurdNode':
                     name = f_cfg['name']
                     address = f_cfg['address']
