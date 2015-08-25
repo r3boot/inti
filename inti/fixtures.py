@@ -26,15 +26,15 @@ class Fixture:
     :param name:    Descriptive name for the fixture
     :type  name:    str
     """
+    bus = None
+    address = None
+    name = 'Fixture'
     channels = {}
 
     def __init__(self, bus, address, name):
-        self._cfg = {
-            'bus': bus,
-            'address': address,
-            'name': name,
-            'channels': self.channels
-        }
+        self.bus = bus
+        self.address = address
+        self.name = name
 
     def __getitem__(self, channel):
         """Get the value from a channel if it is defined
@@ -47,8 +47,8 @@ class Fixture:
         if channel not in self.channels:
             return
 
-        addr = self._cfg['address'] + self._cfg['channels'][channel]
-        return self._cfg['bus'].buffer[addr]
+        addr = self.address + self.channels[channel]
+        return self.bus.buffer[addr]
 
     def __setitem__(self, channel, value):
         """Set the value of a channel if it is defined. Value will be capped
@@ -67,23 +67,13 @@ class Fixture:
         elif value > 255:
             value = 255
 
-        addr = self._cfg['address'] + self._cfg['channels'][channel]
-        self._cfg['bus'].buffer[addr] = value
+        addr = self.address + self.channels[channel]
+        self.bus.buffer[addr] = value
 
-    #def __repr__(self):
+    def __repr__(self):
         """Helper function which returns the name of the fixture
         """
-    #    return self._cfg['name']
-
-    def asdict(self):
-        """Helper function which returns this fixture as a dictionary
-
-        :returns:   Dictionary containing the configuration of this fixture
-        :rtype:     dict
-        """
-        cfg = self._cfg
-        cfg['bus'] = self._cfg['bus']['name']
-        return self._cfg
+        return self.name
 
 
 class NurdNode(Fixture):
