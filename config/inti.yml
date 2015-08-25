@@ -1,0 +1,9 @@
+---
+# This file contains the configuration for inti
+usbdmx:
+  - name: USB DMX bus 1
+    device: /dev/ttyUSB0
+    fixtures:
+      - name: Pan/Tilt RGB spot 1
+        address: 0
+        template: NurdNode
